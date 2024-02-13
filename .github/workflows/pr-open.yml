@@ -1,0 +1,20 @@
+name: PR
+
+on:
+  pull_request:
+
+concurrency:
+  # Cancel in progress for PR open and close
+  group: ${{ github.workflow }}-${{ github.event.number }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test
+    # uses: bcgov-nr/action-support/.github/workflows/pr-close.yml@main
+    uses: ./.github/workflows/pr-close.yml
+    with:
+      packages: backend frontend
+      repository: ${{ github.repository }}
+      promote_from: ${{ github.event.number }}
+      promote_to: test
