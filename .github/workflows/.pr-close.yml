@@ -2,6 +2,15 @@ name: PR Closed
 
 on:
   workflow_call:
+    secrets:
+      token:
+        required: true
+    # secrets:
+    #   token:
+        # description: 'OpenShift token'
+        # required: false
+        # type: string
+
     inputs:
       ### Typical / recommended
       cleanup:
@@ -48,12 +57,6 @@ on:
         default: ${{ github.event.number }}
         required: false
         type: string
-
-      secrets:
-        token:
-          # description: 'OpenShift token'
-          required: false
-          # type: string
 
 jobs:
   vars:
