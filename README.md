@@ -1,2 +1,2 @@
-# action-pr-close
-Common tasks for pull request close, like image promotion and openshift cleanup.
+# quickstart-openshift-helpers
+Workflows and any other common code used by bcgov/quickstart-openshift (template).
