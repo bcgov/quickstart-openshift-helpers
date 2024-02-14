@@ -103,7 +103,7 @@ jobs:
         env:
           release: ${{ inputs.repository }}-${{ inputs.target }}
         run: |
-          oc login --token=${{ inputs.token }} --server=${{ inputs.oc_server }}
+          oc login --token=${{ secrets.token }} --server=${{ inputs.oc_server }}
           oc project ${{ inputs.oc_namespace }} # Safeguard!
 
           # If found, then remove
