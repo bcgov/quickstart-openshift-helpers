@@ -13,6 +13,3 @@ jobs:
     name: Test
     # uses: bcgov-nr/action-support/.github/workflows/pr-close.yml@main
     uses: ./.github/workflows/.pr-close.yml
-    with:
-      cleanup: helm
-      packages: backend frontend
