@@ -8,6 +8,15 @@ on:
         description: 'Type of cleanup; e.g. helm or label'
         required: false
         type: string
+      oc_namespace:
+        description: 'OpenShift namespace'
+        required: false
+        type: string
+      oc_server:
+        default: https://api.silver.devops.gov.bc.ca:6443
+        description: 'OpenShift server'
+        required: false
+        type: string
       packages:
         description: 'Comma-separated list of packages to promote'
         required: false
@@ -40,6 +49,12 @@ on:
         required: false
         type: string
 
+      secrets:
+        oc_token:
+          description: 'OpenShift token'
+          required: false
+          type: string
+
 jobs:
   vars:
     if: inputs.packages != ''
@@ -52,8 +67,8 @@ jobs:
           echo "packages=$(jq -cn '$ARGS.positional' --args ${{ inputs.packages }})"
           echo "packages=$(jq -cn '$ARGS.positional' --args ${{ inputs.packages }})" >> $GITHUB_OUTPUT
 
-  promotions:
-    name: Promote Images
+  retags:
+    name: Retags
     needs: vars
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == '${{ inputs.merge_branch }}'
     runs-on: ubuntu-22.04
@@ -85,8 +100,8 @@ jobs:
         env:
           release: ${{ inputs.repository }}-${{ inputs.target }}
         run: |
-          oc login --token=${{ secrets.OC_TOKEN }} --server=${{ vars.OC_SERVER }}
-          oc project ${{ vars.OC_NAMESPACE }} # Safeguard!
+          oc login --token=${{ inputs.oc_token }} --server=${{ inputs.oc_server }}
+          oc project ${{ inputs.oc_namespace }} # Safeguard!
 
           # If found, then remove
           helm status ${{ env.release }} && helm uninstall --no-hooks ${{ env.release }} || \
@@ -99,8 +114,8 @@ jobs:
       - name: OpenShift Label
         if: inputs.cleanup == 'label'
         run: |
-          oc login --token=${{ secrets.OC_TOKEN }} --server=${{ vars.OC_SERVER }}
-          oc project ${{ vars.OC_NAMESPACE }}
+          oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
+          oc project ${{ inputs.oc_namespace }} # Safeguard!
 
           # Remove old build runs, build pods and deployment pods
           oc delete all,cm,pvc,secret -l app=${{ inputs.repository }}-${{ inputs.target }}
