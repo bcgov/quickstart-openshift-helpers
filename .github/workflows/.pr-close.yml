@@ -50,9 +50,10 @@ on:
         type: string
 
       secrets:
-        oc_token:
-          description: 'OpenShift token'
+        token:
+          # description: 'OpenShift token'
           required: false
+          # type: string
 
 jobs:
   vars:
@@ -99,7 +100,7 @@ jobs:
         env:
           release: ${{ inputs.repository }}-${{ inputs.target }}
         run: |
-          oc login --token=${{ inputs.oc_token }} --server=${{ inputs.oc_server }}
+          oc login --token=${{ inputs.token }} --server=${{ inputs.oc_server }}
           oc project ${{ inputs.oc_namespace }} # Safeguard!
 
           # If found, then remove
@@ -113,7 +114,7 @@ jobs:
       - name: OpenShift Label
         if: inputs.cleanup == 'label'
         run: |
-          oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
+          oc login --token=${{ secrets.token }} --server=${{ inputs.oc_server }}
           oc project ${{ inputs.oc_namespace }} # Safeguard!
 
           # Remove old build runs, build pods and deployment pods
