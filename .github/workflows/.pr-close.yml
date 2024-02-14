@@ -2,15 +2,6 @@ name: PR Closed
 
 on:
   workflow_call:
-    secrets:
-      token:
-        required: true
-    # secrets:
-    #   token:
-        # description: 'OpenShift token'
-        # required: false
-        # type: string
-
     inputs:
       ### Typical / recommended
       cleanup:
@@ -58,6 +49,12 @@ on:
         required: false
         type: string
 
+    secrets:
+      token:
+        description: 'OpenShift token'
+        required: false
+        type: string
+
 jobs:
   vars:
     if: inputs.packages != ''
@@ -82,9 +79,6 @@ jobs:
         package: ${{ fromJson(needs.vars.outputs.packages) }}
     timeout-minutes: 1
     steps:
-      - run: |
-          echo "matrix.package: ${{ matrix.package }}"
-
       - uses: shrink/actions-docker-registry-tag@v4
         with:
           registry: ghcr.io
@@ -103,7 +97,7 @@ jobs:
         env:
           release: ${{ inputs.repository }}-${{ inputs.target }}
         run: |
-          oc login --token=${{ secrets.token }} --server=${{ inputs.oc_server }}
+          oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
           oc project ${{ inputs.oc_namespace }} # Safeguard!
 
           # If found, then remove
@@ -117,7 +111,7 @@ jobs:
       - name: OpenShift Label
         if: inputs.cleanup == 'label'
         run: |
-          oc login --token=${{ secrets.token }} --server=${{ inputs.oc_server }}
+          oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
           oc project ${{ inputs.oc_namespace }} # Safeguard!
 
           # Remove old build runs, build pods and deployment pods
