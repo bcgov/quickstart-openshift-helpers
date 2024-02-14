@@ -12,9 +12,7 @@ jobs:
   test:
     name: Test
     # uses: bcgov-nr/action-support/.github/workflows/pr-close.yml@main
-    uses: ./.github/workflows/pr-close.yml
+    uses: ./.github/workflows/.pr-close.yml
     with:
+      cleanup: helm
       packages: backend frontend
-      repository: ${{ github.repository }}
-      promote_from: ${{ github.event.number }}
-      promote_to: test
