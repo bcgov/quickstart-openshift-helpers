@@ -47,7 +47,7 @@ jobs:
             Thanks for the PR!
 
             Deployments, as required, will be available below:
-            ${{ inputs.markdown }}
+            ${{ inputs.markdown_links }}
 
             Please create PRs in draft mode.  Mark as ready to enable:
             - [Analysis Workflow](https://github.com/${{ github.repository }}/actions/workflows/analysis.yml)
