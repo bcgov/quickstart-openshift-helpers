@@ -9,7 +9,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: Test
-    # uses: bcgov-nr/action-support/.github/workflows/pr-close.yml@main
-    uses: ./.github/workflows/.pr-close.yml
+  # pr-close:
+  #   name: PR Close
+  #   uses: ./.github/workflows/.pr-close.yml
+
+  pr-validate:
+    name: PR Validate
+    uses: ./.github/workflows/.pr-validate.yml
+
