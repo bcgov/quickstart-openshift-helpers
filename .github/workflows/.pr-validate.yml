@@ -46,9 +46,8 @@ jobs:
             Thanks for the PR!
 
             Deployments, as required, will be available below:
-            - [Frontend](https://${{ env.PREFIX }}-${{ github.event.number }}-frontend.${{ env.DOMAIN }})
-            - [Backend](https://${{ env.PREFIX }}-${{ github.event.number }}-frontend.${{ env.DOMAIN }}/api)
-
+            ${{ inputs.markdown }}
+            
             Please create PRs in draft mode.  Mark as ready to enable:
             - [Analysis Workflow](https://github.com/${{ github.repository }}/actions/workflows/analysis.yml)
 

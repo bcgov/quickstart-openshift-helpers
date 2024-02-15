@@ -16,4 +16,10 @@ jobs:
   pr-validate:
     name: PR Validate
     uses: ./.github/workflows/.pr-validate.yml
-
+    env:
+      DOMAIN: apps.silver.devops.gov.bc.ca
+      PREFIX: ${{ github.event.repository.name }}
+    with:
+      markdown: |
+        - [Frontend](https://${{ env.PREFIX }}-${{ github.event.number }}-frontend.${{ env.DOMAIN }})
+        - [Backend](https://${{ env.PREFIX }}-${{ github.event.number }}-frontend.${{ env.DOMAIN }}/api)
