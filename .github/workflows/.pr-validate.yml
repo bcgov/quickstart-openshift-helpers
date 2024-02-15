@@ -6,24 +6,17 @@ on:
       ### Typical / recommended
       conventional_commits:
         description: 'Enforce conventional commits?'
-        default: true
         required: false
         type: string
       markdown_links:
         description: 'Links for PR description'
-        default: false
         required: false
         type: string
-
-    secrets:
-      token:
-        description: 'GitHub token'
-        required: false
 
 jobs:
   conventional-commits:
     name: Conventional Commits
-    if: inputs.conventional_commits != false
+    if: inputs.conventional_commits != 'false'
     runs-on: ubuntu-22.04
     steps:
       - uses: amannn/action-semantic-pull-request@v5.4.0
@@ -38,7 +31,7 @@ jobs:
 
   description:
     name: PR Description
-    if: inputs.markdown_links != false
+    if: inputs.markdown_links != ''
     permissions:
       pull-requests: write
     runs-on: ubuntu-latest
