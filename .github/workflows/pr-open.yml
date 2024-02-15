@@ -15,6 +15,7 @@ jobs:
 
   pr-validate:
     name: PR Validate
+    needs: pr-close
     uses: ./.github/workflows/.pr-validate.yml
     with:
       markdown: |
