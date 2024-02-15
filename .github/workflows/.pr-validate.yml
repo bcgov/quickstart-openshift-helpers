@@ -30,7 +30,7 @@ jobs:
           exit 1
 
   description:
-    name: PR Description
+    name: Description
     if: inputs.markdown_links != ''
     permissions:
       pull-requests: write
