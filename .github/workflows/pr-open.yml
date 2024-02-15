@@ -9,9 +9,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # pr-close:
-  #   name: PR Close
-  #   uses: ./.github/workflows/.pr-close.yml
+  pr-close:
+    name: PR Close
+    uses: ./.github/workflows/.pr-close.yml
 
   pr-validate:
     name: PR Validate
