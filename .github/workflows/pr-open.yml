@@ -10,11 +10,11 @@ concurrency:
 
 jobs:
   pr-close:
-    name: PR Close
+    name: Close
     uses: ./.github/workflows/.pr-close.yml
 
   pr-validate:
-    name: PR Validate
+    name: Validate
     needs: pr-close
     uses: ./.github/workflows/.pr-validate.yml
     with:
