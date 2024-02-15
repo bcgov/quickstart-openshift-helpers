@@ -23,7 +23,7 @@ on:
 jobs:
   conventional-commits:
     name: Conventional Commits
-    if: inputs.conventional_commits
+    if: inputs.conventional_commits != false
     runs-on: ubuntu-22.04
     steps:
       - uses: amannn/action-semantic-pull-request@v5.4.0
@@ -38,7 +38,7 @@ jobs:
 
   description:
     name: PR Description
-    if: inputs.markdown_links
+    if: inputs.markdown_links != false
     permissions:
       pull-requests: write
     runs-on: ubuntu-latest
