@@ -20,7 +20,8 @@ on:
         type: string
 
 jobs:
-  validate:
+  checks:
+    name: Checks
     runs-on: ubuntu-22.04
     steps:
       # Conventional commits
