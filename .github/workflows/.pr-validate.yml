@@ -6,10 +6,12 @@ on:
       ### Typical / recommended
       conventional_commits:
         description: 'Enforce conventional commits?'
+        default: 'true'
         required: false
         type: string
-      fork_block:
+      forks_allowed:
         description: 'Block forks?'
+        default: 'false'
         required: false
         type: string
       markdown_links:
@@ -35,11 +37,11 @@ jobs:
 
   block-forks:
     name: Block Forks
-    if: inputs.fork_block != 'false' && github.event.pull_request.head.repo.fork
+    if: inputs.forks_allowed != 'true' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-22.04
     steps:
       - run: |
-          echo "These actions do not work with forks.  Our apologies for any inconvenience."
+          echo "These workflows do not work with forks.  Our apologies for any inconvenience."
           exit 1
 
   description:
