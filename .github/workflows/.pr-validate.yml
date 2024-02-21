@@ -40,7 +40,8 @@ jobs:
     if: inputs.forks_allowed != 'true' && !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-22.04
     steps:
-      - run: |
+      - name: Block Forks
+        run: |
           echo "These workflows do not work with forks.  Our apologies for any inconvenience."
           exit 1
 
