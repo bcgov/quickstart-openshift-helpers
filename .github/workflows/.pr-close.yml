@@ -1,4 +1,4 @@
-name: PR Closed
+name: .PR Closed
 
 on:
   workflow_call:
