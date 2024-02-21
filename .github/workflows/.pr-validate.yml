@@ -8,6 +8,10 @@ on:
         description: 'Enforce conventional commits?'
         required: false
         type: string
+      fork_block:
+        description: 'Block forks?'
+        required: false
+        type: string
       markdown_links:
         description: 'Links for PR description'
         required: false
@@ -27,6 +31,15 @@ jobs:
         run: |
           echo "Please use conventional commits in your PR title and re-run this job."
           echo "https://www.conventionalcommits.org/en/v1.0.0/"
+          exit 1
+
+  block-forks:
+    name: Block Forks
+    if: inputs.fork_block != 'false' && github.event.pull_request.head.repo.fork
+    runs-on: ubuntu-22.04
+    steps:
+      - run: |
+          echo "These actions do not work with forks.  Our apologies for any inconvenience."
           exit 1
 
   description:
