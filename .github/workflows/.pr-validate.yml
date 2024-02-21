@@ -1,4 +1,4 @@
-name: PR Validate
+name: .PR Validate
 
 on:
   workflow_call:
@@ -9,7 +9,7 @@ on:
         default: 'true'
         required: false
         type: string
-      forks_allowed:
+      reject_forks:
         description: 'Are forks allowed?  [true|false]'
         default: 'false'
         required: false
@@ -20,39 +20,26 @@ on:
         type: string
 
 jobs:
-  conventional-commits:
-    name: Conventional Commits
-    if: inputs.conventional_commits != 'false'
+  checks:
+    name: Checks
     runs-on: ubuntu-22.04
     steps:
-      - uses: amannn/action-semantic-pull-request@v5.4.0
+      # Conventional commits
+      - name: Conventional Commits
+        uses: amannn/action-semantic-pull-request@v5.4.0
+        if: inputs.conventional_commits != 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - if: failure()
-        run: |
-          echo "Please use conventional commits in your PR title and re-run this job."
-          echo "https://www.conventionalcommits.org/en/v1.0.0/"
-          exit 1
+      # Check for forks
+      - name: Fork Check
+        if: inputs.reject_forks != 'true' && github.event.pull_request.head.repo.fork
+        run: exit 1
 
-  block-forks:
-    name: Block Forks
-    if: inputs.forks_allowed != 'true' && github.event.pull_request.head.repo.fork
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Block Forks
-        run: |
-          echo "These workflows do not work with forks.  Our apologies for any inconvenience."
-          exit 1
-
-  description:
-    name: Description
-    if: inputs.markdown_links != ''
-    permissions:
-      pull-requests: write
-    runs-on: ubuntu-latest
-    steps:
-      - uses: bcgov-nr/action-pr-description-add@v1.1.1
+      # Add PR Description, doesn't work with forks
+      - name: PR Description
+        if: inputs.reject_forks != 'true' && inputs.markdown_links != ''
+        uses: bcgov-nr/action-pr-description-add@v1.1.1
         env:
           DOMAIN: apps.silver.devops.gov.bc.ca
           PREFIX: ${{ github.event.repository.name }}
@@ -70,3 +57,13 @@ jobs:
 
             After merge, new images are deployed in:
             - [Merge Workflow](https://github.com/${{ github.repository }}/actions/workflows/merge.yml)
+
+      # Notify of any failures
+      - name: Errors
+        if: failure()
+        run: |
+          echo "Validation failed!  Possible reasons:"
+          echo " - Forks are not supported"
+          echo " - Conventional commits required for PR titles and merges"
+          echo "    https://www.conventionalcommits.org/en/v1.0.0/"
+          exit 1
