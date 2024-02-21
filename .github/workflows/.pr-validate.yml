@@ -10,7 +10,7 @@ on:
         required: false
         type: string
       forks_allowed:
-        description: 'Block forks?'
+        description: 'Are forks allowed?  [true|false]'
         default: 'false'
         required: false
         type: string
@@ -37,7 +37,7 @@ jobs:
 
   block-forks:
     name: Block Forks
-    if: inputs.forks_allowed != 'true' && !github.event.pull_request.head.repo.fork
+    if: inputs.forks_allowed != 'true' && github.event.pull_request.head.repo.fork
     runs-on: ubuntu-22.04
     steps:
       - name: Block Forks
