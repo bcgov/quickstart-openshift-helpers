@@ -40,16 +40,20 @@ jobs:
     name: Deploys
     needs: [builds]
     uses: ./.github/workflows/.deployer.yml
-    secrets: inherit
+    secrets:
+      oc_namespace: ${{ secrets.oc_namespace }}
+      oc_token: ${{ secrets.oc_token }}
     with:
-      params: --set global.autoscaling=false --set Chart.name=${{ github.event.repository.name }} #--set Chart.version=${{ github.event.number }}
+      params: --set global.autoscaling=false
       release: ${{ github.event.number }}
 
   close:
     name: Close
     needs: [deploys]
     uses: ./.github/workflows/.pr-close.yml
-    secrets: inherit
+    secrets:
+      oc_namespace: ${{ secrets.oc_namespace }}
+      oc_token: ${{ secrets.oc_token }}
     with:
       cleanup: helm
 

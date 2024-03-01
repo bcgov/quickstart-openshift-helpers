@@ -10,14 +10,13 @@ on:
         type: string
 
       ### Typical / recommended
-      cleanup:
-        description: Cleanup, too aggressive for higher level environments
-        default: false
-        required: false
-        type: string
       directory:
         description: Chart directory
         default:  'charts/${{ github.event.repository.name }}'
+        required: false
+        type: string
+      environment:
+        description: Environment name; omit for PRs
         required: false
         type: string
       oc_server:
@@ -59,14 +58,15 @@ on:
     secrets:
       oc_namespace:
         description: OpenShift namespace
-        required: false
+        required: true
       oc_token:
         description: OpenShift token
-        required: false
+        required: true
 
 jobs:
   deployer:
     name: Deployer
+    environment: ${{ inputs.environment }}
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.triggers.outputs.triggered }}
