@@ -65,6 +65,10 @@ on:
 
 jobs:
   deployer:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.triggers.outputs.triggered }}
+    steps:
     ### Triggers, tags and early exits
 
     # Check triggers (omitted or matched), exiting successfully if not fired/required
