@@ -18,7 +18,7 @@ on:
       environment:
         description: Environment name; omit for PRs
         required: false
-        type: environment
+        type: string
       oc_server:
         default: https://api.silver.devops.gov.bc.ca:6443
         description: 'OpenShift server'
