@@ -49,6 +49,7 @@ jobs:
     name: Close
     needs: [deploys]
     uses: ./.github/workflows/.pr-close.yml
+    secrets: inherit
     with:
       cleanup: helm
 

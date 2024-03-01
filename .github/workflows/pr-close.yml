@@ -13,6 +13,7 @@ jobs:
   cleanup:
     name: Cleanup OpenShift and/or Promote Images
     uses: ./.github/workflows/.pr-close.yml
+    secrets: inherit
     with:
       cleanup: helm
       packages: backend frontend migrations
