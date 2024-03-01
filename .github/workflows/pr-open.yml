@@ -35,6 +35,7 @@ jobs:
         with:
           keep_versions: 50
           package: ${{ matrix.package }}
+          repository: bcgov/quickstart-openshift
           tag: ${{ github.event.number }}
           tag_fallback: latest
           triggers: ('${{ matrix.package }}/')
