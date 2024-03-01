@@ -4,6 +4,10 @@ on:
   workflow_call:
     inputs:
       ### Required
+      oc_namespace:
+        description: OpenShift namespace
+        required: true
+        type: string
       release:
         description: Deployment release; usually repo-name-[PR|test|prod]
         required: true
@@ -56,9 +60,6 @@ on:
         value: ${{ jobs.deployer.outputs.triggered }}
 
     secrets:
-      oc_namespace:
-        description: OpenShift namespace
-        required: true
       oc_token:
         description: OpenShift token
         required: true
@@ -111,7 +112,7 @@ jobs:
     - run: |
         # OC Login
         oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
-        oc project ${{ secrets.oc_namespace }} # Safeguard!
+        oc project ${{ inputs.oc_namespace }} # Safeguard!
 
     # Stop pre-existing deployments
     - run: |
