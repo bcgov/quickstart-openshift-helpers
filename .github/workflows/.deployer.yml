@@ -1,71 +1,70 @@
-name: Helm Deployer
-description: Helm wrapper intended for use with github.com/bcgov/quickstart-openshift
-branding:
-  icon: package
-  color: blue
+name: .Helm Deployer
 
-inputs:
-  ### Required
-  oc_namespace:
-    description: OpenShift namespace
-    required: true
-  oc_token:
-    description: OpenShift token
-    required: true
-  release:
-    description: Deployment release; usually repo-name-[PR|test|prod]
-    required: true
-    type: string
+on:
+  workflow_call:
+    inputs:
+      ### Required
+      release:
+        description: Deployment release; usually repo-name-[PR|test|prod]
+        required: true
+        type: string
 
-  ### Typical / recommended
-  cleanup:
-    description: Cleanup, too aggressive for higher level environments
-    default: false
-    required: false
-  directory:
-    description: Chart directory
-    default:  'charts/${{ github.event.repository.name }}'
-    required: false
-    type: string
-  oc_server:
-    default: https://api.silver.devops.gov.bc.ca:6443
-    description: 'OpenShift server'
-    required: false
-    type: string
-  params:
-    description: 'Extra parameters to pass to helm upgrade'
-    default: ''
-    required: false
-    type: string
-  tag:
-    description: Specify a tag to deploy; defaults to PR number
-    required: false
-    type: string
-  triggers:
-    description: Paths used to trigger a deployment; e.g. ('./backend/' './frontend/)
-    required: false
-    type: string
+      ### Typical / recommended
+      cleanup:
+        description: Cleanup, too aggressive for higher level environments
+        default: false
+        required: false
+      directory:
+        description: Chart directory
+        default:  'charts/${{ github.event.repository.name }}'
+        required: false
+        type: string
+      oc_server:
+        default: https://api.silver.devops.gov.bc.ca:6443
+        description: 'OpenShift server'
+        required: false
+        type: string
+      params:
+        description: 'Extra parameters to pass to helm upgrade'
+        default: ''
+        required: false
+        type: string
+      tag:
+        description: Specify a tag to deploy; defaults to PR number
+        required: false
+        type: string
+      triggers:
+        description: Paths used to trigger a deployment; e.g. ('./backend/' './frontend/)
+        required: false
+        type: string
 
-  ### Usually a bad idea / not recommended
-  timeout-minutes:
-    description: 'Timeout minutes'
-    default: 10
-    required: false
-    type: number
-  values:
-    description: 'Values file'
-    default: 'values.yaml'
-    required: false
-    type: string
+      ### Usually a bad idea / not recommended
+      timeout-minutes:
+        description: 'Timeout minutes'
+        default: 10
+        required: false
+        type: number
+      values:
+        description: 'Values file'
+        default: 'values.yaml'
+        required: false
+        type: string
 
-outputs:
-  triggered:
-    description: 'Has a deployment has been triggered?'
-    value: ${{ steps.triggers.outputs.triggered }}
+    outputs:
+      triggered:
+        description: 'Has a deployment has been triggered?'
+        value: ${{ steps.triggers.outputs.triggered }}
 
-runs:
-  using: composite
-  steps:
+    secrets:
+        oc_namespace:
+        description: OpenShift namespace
+        required: true
+      oc_token:
+        description: OpenShift token
+        required: true
+
+jobs:
+  deployer:
     ### Triggers, tags and early exits
 
     # Check triggers (omitted or matched), exiting successfully if not fired/required
@@ -74,7 +73,6 @@ runs:
       with:
         triggers: ${{ inputs.triggers }}
     - if: steps.triggers.outputs.triggered == 'false'
-      shell: bash
       run: |
         echo "No deployment required/triggered!"
         exit 0
@@ -83,7 +81,6 @@ runs:
     - id: pr
       uses: bcgov-nr/action-get-pr@v0.0.1
     - id: vars
-      shell: bash
       run: |
         # Vars: repo_release and tag
 
@@ -105,15 +102,13 @@ runs:
     ### Deploy
 
     # OC Login
-    - shell: bash
-      run: |
+    - run: |
         # OC Login
-        oc login --token=${{ inputs.oc_token }} --server=${{ inputs.oc_server }}
-        oc project ${{ inputs.oc_namespace }} # Safeguard!
+        oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
+        oc project ${{ secrets.oc_namespace }} # Safeguard!
 
     # Stop pre-existing deployments
-    - shell: bash
-      run: |
+    - run: |
         # Interrupt any previous deployments (status = pending-upgrade)
         PREVIOUS=$(helm status ${{ steps.vars.outputs.repo_release }} -o json | jq .info.status || true)
         if [[ ${PREVIOUS} =~ pending ]]; then
@@ -124,15 +119,13 @@ runs:
 
     # Package Helm chart
     - uses: actions/checkout@v4
-    - shell: bash
-      working-directory: ${{ inputs.directory }}
+    - working-directory: ${{ inputs.directory }}
       run: |
         # Package Helm chart
         helm package -u . --app-version="${{ steps.vars.outputs.tag }}" --version=${{ steps.pr.outputs.pr }}
 
     # Deploy Helm chart
-    - shell: bash
-      working-directory: ${{ inputs.directory }}
+    - working-directory: ${{ inputs.directory }}
       run: |
         # Deploy Helm chart
         helm upgrade \
@@ -145,15 +138,13 @@ runs:
           ./${{ github.event.repository.name }}-${{ steps.vars.outputs.tag }}.tgz
 
     # Helm release history
-    - shell: bash
-      run: |
+    - run: |
         # Helm release history
         helm history ${{ steps.vars.outputs.repo_release }}
 
     ### Cleanup
 
     # Completed pod cleanup
-    - shell: bash
-      run: |
+    - run: |
         # Expand for succeeded pod cleanup (optional)
         oc delete po --field-selector=status.phase==Succeeded || true

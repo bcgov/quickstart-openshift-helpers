@@ -21,3 +21,36 @@ jobs:
       markdown_links: |
         - [Frontend](https://${{ github.event.repository.name }}-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca)
         - [Backend](https://${{ github.event.repository.name }}-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca/api)
+
+  # https://github.com/bcgov-nr/action-builder-ghcr
+  builds:
+    name: Builds
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        package: [migrations, backend, frontend]
+    timeout-minutes: 10
+    steps:
+      - uses: bcgov-nr/action-builder-ghcr@v2.0.2
+        id: builds
+        with:
+          keep_versions: 50
+          package: ${{ matrix.package }}
+          tag: ${{ github.event.number }}
+          tag_fallback: latest
+          triggers: ('${{ matrix.package }}/')
+
+  deploys:
+    name: Deploys
+    needs: [builds]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploys
+        uses: ./.github/workflows/.pr-validate.yml
+        secrets:
+          OC_NAMESPACE: ${{ secrets.OC_NAMESPACE }}
+          OC_TOKEN: ${{ secrets.OC_TOKEN }}
+        with:
+          params: |
+            --set global.autoscaling=false
+          release: ${{ github.event.number }}
