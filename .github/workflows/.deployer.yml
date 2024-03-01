@@ -56,7 +56,7 @@ on:
         value: ${{ steps.triggers.outputs.triggered }}
 
     secrets:
-        oc_namespace:
+      oc_namespace:
         description: OpenShift namespace
         required: true
       oc_token:
