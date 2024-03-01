@@ -31,11 +31,11 @@ jobs:
 
   deploy-test:
     name: Deploy (test)
-    environment: test
     needs: [vars]
-    secrets: inherit
     uses: ./.github/workflows/.deployer.yml
+    secrets: inherit
     with:
+      environment: test
       params: --set global.autoscaling=false --set Chart.name=${{ github.event.repository.name }} #--set Chart.version=${{ github.event.number }}
       release: test
       tag: ${{ needs.vars.outputs.pr }}

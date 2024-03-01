@@ -20,6 +20,10 @@ on:
         default:  'charts/${{ github.event.repository.name }}'
         required: false
         type: string
+      environment:
+        description: GitHub environment; omit for DEV/PRs
+        required: false
+        type: string
       oc_server:
         default: https://api.silver.devops.gov.bc.ca:6443
         description: 'OpenShift server'
@@ -108,7 +112,8 @@ jobs:
     ### Deploy
 
     # OC Login
-    - run: |
+    - environment: ${{ inputs.environment }}
+      run: |
         # OC Login
         oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
         oc project ${{ secrets.oc_namespace }} # Safeguard!
