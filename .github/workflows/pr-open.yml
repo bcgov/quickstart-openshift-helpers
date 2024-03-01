@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  pr-validate:
+  validate:
     name: Validate
     uses: ./.github/workflows/.pr-validate.yml
     with:
@@ -45,9 +45,17 @@ jobs:
       params: --set global.autoscaling=false --set Chart.name=${{ github.event.repository.name }} #--set Chart.version=${{ github.event.number }}
       release: ${{ github.event.number }}
 
-  pr-close:
+  close:
     name: Close
     needs: [deploys]
     uses: ./.github/workflows/.pr-close.yml
     with:
       cleanup: helm
+
+  results:
+    name: PR Results
+    needs: [validate, deploys, close]
+    if: always() && !failure()
+    runs-on: ubuntu-22.04
+    steps:
+      - run: echo "Workflow completed successfully!"
