@@ -34,6 +34,7 @@ jobs:
     environment: test
     needs: [vars]
     secrets: inherit
+    uses: ./.github/workflows/.deployer.yml
     with:
       params: --set global.autoscaling=false --set Chart.name=${{ github.event.repository.name }} #--set Chart.version=${{ github.event.number }}
       release: test
