@@ -46,6 +46,5 @@ jobs:
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
-      params: |
-        --set global.autoscaling=false
+      params: --set global.autoscaling=false
       release: ${{ github.event.number }}
