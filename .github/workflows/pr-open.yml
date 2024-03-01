@@ -46,5 +46,5 @@ jobs:
     uses: ./.github/workflows/.deployer.yml
     secrets: inherit
     with:
-      params: --set global.autoscaling=false
+      params: --set global.autoscaling=false --set Chart.name=${{ github.event.repository.name }} #--set Chart.version=${{ github.event.number }}
       release: ${{ github.event.number }}
