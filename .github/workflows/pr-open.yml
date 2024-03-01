@@ -44,9 +44,9 @@ jobs:
     name: Deploys
     # needs: [builds]
     uses: ./.github/workflows/.deployer.yml
-        secrets:
-          OC_NAMESPACE: ${{ secrets.OC_NAMESPACE }}
-          OC_TOKEN: ${{ secrets.OC_TOKEN }}
+    secrets:
+      OC_NAMESPACE: ${{ secrets.OC_NAMESPACE }}
+      OC_TOKEN: ${{ secrets.OC_TOKEN }}
     with:
       params: |
         --set global.autoscaling=false
