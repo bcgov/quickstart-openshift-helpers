@@ -1,0 +1,31 @@
+name: Build Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Specify a tag to build; defaults to latest'
+        default: latest
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  # https://github.com/bcgov-nr/action-builder-ghcr
+  builds:
+    name: Builds
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        package: [migrations, backend, frontend]
+    timeout-minutes: 10
+    steps:
+      - uses: bcgov-nr/action-builder-ghcr@v2.0.2
+        id: builds
+        with:
+          keep_versions: 50
+          package: ${{ matrix.package }}
+          repository: bcgov/quickstart-openshift
+          tag: ${{ inputs.tag }}
