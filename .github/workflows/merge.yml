@@ -40,6 +40,5 @@ jobs:
       environment: test
       params: --set global.autoscaling=false
       release: test
-      tag: ${{ needs.vars.outputs.pr }}
 
 
