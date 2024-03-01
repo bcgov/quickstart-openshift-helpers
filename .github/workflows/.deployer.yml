@@ -1,0 +1,158 @@
+name: .Helm Deployer
+
+on:
+  workflow_call:
+    inputs:
+      ### Required
+      release:
+        description: Deployment release; usually repo-name-[PR|test|prod]
+        required: true
+        type: string
+
+      ### Typical / recommended
+      cleanup:
+        description: Cleanup, too aggressive for higher level environments
+        default: false
+        required: false
+        type: string
+      directory:
+        description: Chart directory
+        default:  'charts/${{ github.event.repository.name }}'
+        required: false
+        type: string
+      oc_server:
+        default: https://api.silver.devops.gov.bc.ca:6443
+        description: 'OpenShift server'
+        required: false
+        type: string
+      params:
+        description: 'Extra parameters to pass to helm upgrade'
+        default: ''
+        required: false
+        type: string
+      tag:
+        description: Specify a tag to deploy; defaults to PR number
+        required: false
+        type: string
+      triggers:
+        description: Paths used to trigger a deployment; e.g. ('./backend/' './frontend/)
+        required: false
+        type: string
+
+      ### Usually a bad idea / not recommended
+      timeout-minutes:
+        description: 'Timeout minutes'
+        default: 10
+        required: false
+        type: number
+      values:
+        description: 'Values file'
+        default: 'values.yaml'
+        required: false
+        type: string
+
+    outputs:
+      triggered:
+        description: 'Has a deployment has been triggered?'
+        value: ${{ jobs.deployer.outputs.triggered }}
+
+    secrets:
+      oc_namespace:
+        description: OpenShift namespace
+        required: false
+      oc_token:
+        description: OpenShift token
+        required: false
+
+jobs:
+  deployer:
+    name: Deployer
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.triggers.outputs.triggered }}
+    steps:
+    ### Triggers, tags and early exits
+
+    # Check triggers (omitted or matched), exiting successfully if not fired/required
+    - uses: bcgov-nr/action-diff-triggers@v0.2.0
+      id: triggers
+      with:
+        triggers: ${{ inputs.triggers }}
+    - if: steps.triggers.outputs.triggered == 'false'
+      run: |
+        echo "No deployment required/triggered!"
+        exit 0
+
+    # Use any provided tags, otherwise use the PR number
+    - id: pr
+      uses: bcgov-nr/action-get-pr@v0.0.1
+    - id: vars
+      run: |
+        # Vars: repo_release and tag
+
+        # Set repo release name, which tacks the repo name onto the release, avoiding collisions
+        echo "repo_release=${{ github.event.repository.name }}-${{ inputs.release }}" >> $GITHUB_OUTPUT
+
+        # Set tag to PR number if inputs.tag not provided
+        if [ -z ${{ inputs.tag }} ]; then
+          echo "tag=${{ steps.pr.outputs.pr }}" >> $GITHUB_OUTPUT
+        else
+          echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
+        fi
+
+        # Summary
+        echo "repo_release=${{ github.event.repository.name }}-${{ inputs.release }}"
+        echo "tag (if pr num)=${{ steps.pr.outputs.pr }}"
+        echo "tag (if inputs)=${{ inputs.tag }}"
+
+    ### Deploy
+
+    # OC Login
+    - run: |
+        # OC Login
+        oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
+        oc project ${{ secrets.oc_namespace }} # Safeguard!
+
+    # Stop pre-existing deployments
+    - run: |
+        # Interrupt any previous deployments (status = pending-upgrade)
+        PREVIOUS=$(helm status ${{ steps.vars.outputs.repo_release }} -o json | jq .info.status || true)
+        if [[ ${PREVIOUS} =~ pending ]]; then
+          echo "Rollback triggered"
+          helm rollback ${{ steps.vars.outputs.repo_release }} || \
+            helm uninstall ${{ steps.vars.outputs.repo_release }}
+        fi
+
+    # Package Helm chart
+    - uses: actions/checkout@v4
+    - working-directory: ${{ inputs.directory }}
+      run: |
+        # Package Helm chart
+        helm package -u . --app-version="${{ steps.vars.outputs.tag }}" --version=${{ steps.pr.outputs.pr }}
+        mv *.tgz package.tgz
+        echo "New package name: package.tgz"
+
+    # Deploy Helm chart
+    - working-directory: ${{ inputs.directory }}
+      run: |
+        # Deploy Helm chart
+        helm upgrade \
+          --set-string global.repository=${{ github.repository }} \
+          --set-string global.tag=${{ steps.vars.outputs.tag }} \
+          ${{ inputs.params }} \
+          --install --wait --atomic ${{ steps.vars.outputs.repo_release }} \
+          --timeout ${{ inputs.timeout-minutes }}m \
+          --values ${{ inputs.values }} \
+          ./package.tgz
+
+    # Helm release history
+    - run: |
+        # Helm release history
+        helm history ${{ steps.vars.outputs.repo_release }}
+
+    ### Cleanup
+
+    # Completed pod cleanup
+    - run: |
+        # Expand for succeeded pod cleanup (optional)
+        oc delete po --field-selector=status.phase==Succeeded || true

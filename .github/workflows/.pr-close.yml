@@ -96,7 +96,7 @@ jobs:
           release: ${{ inputs.repository }}-${{ inputs.target }}
         run: |
           oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
-          oc project ${{ inputs.oc_namespace }} # Safeguard!
+          oc project ${{ secrets.oc_namespace }} # Safeguard!
 
           # If found, then remove
           helm status ${{ env.release }} && helm uninstall --no-hooks ${{ env.release }} || \
@@ -110,7 +110,7 @@ jobs:
         if: inputs.cleanup == 'label'
         run: |
           oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
-          oc project ${{ inputs.oc_namespace }} # Safeguard!
+          oc project ${{ secrets.oc_namespace }} # Safeguard!
 
           # Remove old build runs, build pods and deployment pods
           oc delete all,cm,pvc,secret -l app=${{ inputs.repository }}-${{ inputs.target }}
