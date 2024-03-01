@@ -32,6 +32,7 @@ jobs:
   deploy-test:
     name: Deploy (test)
     needs: [vars]
+    environment: test
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_token: ${{ secrets.oc_token }}
