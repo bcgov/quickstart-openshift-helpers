@@ -43,12 +43,12 @@ jobs:
   deploys:
     name: Deploys
     # needs: [builds]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Deploys
-        uses: ./.github/workflows/.deployer.yml
-        with:
-          params: |
-            --set global.autoscaling=false
-          release: ${{ github.event.number }}
+    uses: ./.github/workflows/.deployer.yml
+      with:
+        params: |
+          --set global.autoscaling=false
+        release: ${{ github.event.number }}
+
+  # pr-close:
+  #   name: Close
+  #   uses: ./.github/workflows/.pr-close.yml
