@@ -15,7 +15,6 @@ jobs:
 
   # pr-validate:
   #   name: Validate
-  #   needs: pr-close
   #   uses: ./.github/workflows/.pr-validate.yml
   #   with:
   #     markdown_links: |
@@ -48,7 +47,7 @@ jobs:
       - name: Deploys
         uses: ./.github/workflows/.deployer.yml
         secrets:
-          OC_NAMESPACE: ${{ secrets.OC_NAMESPACE }}
+          OC_NAMESPACE: ${{ vars.OC_NAMESPACE }}
           OC_TOKEN: ${{ secrets.OC_TOKEN }}
         with:
           params: |
