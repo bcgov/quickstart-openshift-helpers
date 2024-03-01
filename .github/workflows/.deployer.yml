@@ -14,6 +14,7 @@ on:
         description: Cleanup, too aggressive for higher level environments
         default: false
         required: false
+        type: string
       directory:
         description: Chart directory
         default:  'charts/${{ github.event.repository.name }}'
