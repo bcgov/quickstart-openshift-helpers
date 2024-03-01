@@ -53,7 +53,7 @@ on:
     outputs:
       triggered:
         description: 'Has a deployment has been triggered?'
-        value: ${{ steps.triggers.outputs.triggered }}
+        value: ${{ jobs.deployer.outputs.triggered }}
 
     secrets:
       oc_namespace:
