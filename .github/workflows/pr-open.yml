@@ -9,10 +9,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  pr-close:
-    name: Close
-    uses: ./.github/workflows/.pr-close.yml
-
   pr-validate:
     name: Validate
     uses: ./.github/workflows/.pr-validate.yml
@@ -48,3 +44,10 @@ jobs:
     with:
       params: --set global.autoscaling=false --set Chart.name=${{ github.event.repository.name }} #--set Chart.version=${{ github.event.number }}
       release: ${{ github.event.number }}
+
+  pr-close:
+    name: Close
+    needs: [deploys]
+    uses: ./.github/workflows/.pr-close.yml
+    with:
+      cleanup: helm
