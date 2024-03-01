@@ -129,6 +129,7 @@ jobs:
       run: |
         # Package Helm chart
         helm package -u . --app-version="${{ steps.vars.outputs.tag }}" --version=${{ steps.pr.outputs.pr }}
+        mv *.tgz package.tgz
 
     # Deploy Helm chart
     - working-directory: ${{ inputs.directory }}
@@ -141,7 +142,7 @@ jobs:
           --install --wait --atomic ${{ steps.vars.outputs.repo_release }} \
           --timeout ${{ inputs.timeout-minutes }}m \
           --values ${{ inputs.values }} \
-          ./${{ github.event.repository.name }}-${{ steps.vars.outputs.tag }}.tgz
+          ./package.tgz
 
     # Helm release history
     - run: |
