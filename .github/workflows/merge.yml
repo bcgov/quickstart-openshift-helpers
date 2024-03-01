@@ -32,13 +32,12 @@ jobs:
   deploy-test:
     name: Deploy (test)
     needs: [vars]
-    environment: test
     uses: ./.github/workflows/.deployer.yml
     secrets:
+      oc_namespace: ${{ secrets.oc_namespace }}
       oc_token: ${{ secrets.oc_token }}
     with:
       environment: test
-      oc_namespace: ${{ vars.oc_namespace }}
       params: --set global.autoscaling=false
       release: test
       tag: ${{ needs.vars.outputs.pr }}
