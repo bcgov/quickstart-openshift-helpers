@@ -66,6 +66,7 @@ on:
 
 jobs:
   deployer:
+    name: Deployer
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.triggers.outputs.triggered }}
