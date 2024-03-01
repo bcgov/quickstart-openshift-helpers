@@ -44,11 +44,7 @@ jobs:
     name: Deploys
     # needs: [builds]
     uses: ./.github/workflows/.deployer.yml
-      with:
-        params: |
-          --set global.autoscaling=false
-        release: ${{ github.event.number }}
-
-  # pr-close:
-  #   name: Close
-  #   uses: ./.github/workflows/.pr-close.yml
+    with:
+      params: |
+        --set global.autoscaling=false
+      release: ${{ github.event.number }}
