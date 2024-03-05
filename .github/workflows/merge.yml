@@ -38,6 +38,4 @@ jobs:
     with:
       environment: test
       params: --set global.autoscaling=false
-      release: test
-
-
+      release: test-${{ github.event.repository.updated_at}}
