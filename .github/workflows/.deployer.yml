@@ -91,7 +91,7 @@ jobs:
         # Vars: repo_release and tag
 
         # Set repo release name, which tacks the repo name onto the release, avoiding collisions
-        echo "repo_release=${{ github.event.repository.name }}-${{ inputs.release }}" >> $GITHUB_OUTPUT
+        echo "repo_release=${{ github.event.repository.name }}-${{ inputs.release }}-${{ github.run_number }}" >> $GITHUB_OUTPUT
 
         # Set tag to PR number if inputs.tag not provided
         if [ -z ${{ inputs.tag }} ]; then
@@ -101,7 +101,7 @@ jobs:
         fi
 
         # Summary
-        echo "repo_release=${{ github.event.repository.name }}-${{ inputs.release }}"
+        echo "repo_release=${{ github.event.repository.name }}-${{ inputs.release }}-${{ github.run_number }}"
         echo "tag (if pr num)=${{ steps.pr.outputs.pr }}"
         echo "tag (if inputs)=${{ inputs.tag }}"
 

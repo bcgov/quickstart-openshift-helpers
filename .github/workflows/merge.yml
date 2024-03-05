@@ -17,48 +17,26 @@ on:
   #       required: true
 
 jobs:
-  # vars:
-  #   name: Set Variables
-  #   outputs:
-  #     pr: ${{ steps.pr.outputs.pr }}
-  #   runs-on: ubuntu-22.04
-  #   timeout-minutes: 1
-  #   steps:
-  #     # Get PR number for squash merges to main
-  #     - name: PR Number
-  #       id: pr
-  #       uses: bcgov-nr/action-get-pr@v0.0.1
-
-  # deploy-test:
-  #   name: Deploy (test)
-  #   needs: [vars]
-  #   uses: ./.github/workflows/.deployer.yml
-  #   secrets:
-  #     oc_namespace: ${{ secrets.oc_namespace }}
-  #     oc_token: ${{ secrets.oc_token }}
-  #   with:
-  #     environment: test
-  #     params: --set global.autoscaling=false
-  #     release: test-${{ github.event.repository.updated_at}}
-  # Dump GitHub Context.Event
-  dump:
-    name: Dump GitHub Context.Event
+  vars:
+    name: Set Variables
+    outputs:
+      pr: ${{ steps.pr.outputs.pr }}
     runs-on: ubuntu-22.04
+    timeout-minutes: 1
     steps:
-      # - name: Dump GitHub Context.Event
-      #   run: echo "${{ toJson(github.event) }}"
+      # Get PR number for squash merges to main
+      - name: PR Number
+        id: pr
+        uses: bcgov-nr/action-get-pr@v0.0.1
 
-      - name: GitHub context
-        run: echo "${{ toJson(github) }}"
-
-      - name: Job context
-        run: echo "${{ toJson(job) }}"
-
-      - name: Steps context
-        run: echo "${{ toJson(steps) }}"
-
-      - name: Runner context
-        run: echo "${{ toJson(runner) }}"
-
-      - name: Strategy context
-        run: echo "${{ toJson(strategy) }}"
+  deploy-test:
+    name: Deploy (test)
+    needs: [vars]
+    uses: ./.github/workflows/.deployer.yml
+    secrets:
+      oc_namespace: ${{ secrets.oc_namespace }}
+      oc_token: ${{ secrets.oc_token }}
+    with:
+      environment: test
+      params: --set global.autoscaling=false
+      release: test
