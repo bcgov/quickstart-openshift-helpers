@@ -62,7 +62,7 @@ on:
 
 jobs:
   deployer:
-    name: Deployer
+    name: Helm
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-latest
     outputs:
