@@ -17,3 +17,4 @@ jobs:
     with:
       cleanup: helm
       packages: backend frontend migrations
+      tag_promote: latest
