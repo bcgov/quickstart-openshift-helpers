@@ -86,18 +86,25 @@ jobs:
           tags: ${{ inputs.tag_promote }}
 
   # Clean up OpenShift when PR closed, no conditions
-  cleanup-openshift:
-    name: Cleanup OpenShift
+  cleanup:
+    name: OpenShift
+    if: inputs.cleanup == 'helm' || inputs.cleanup == 'label'
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:
+      # OC Login
+      - run: |
+          # OC Login
+          oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
+          oc project ${{ secrets.oc_namespace }} # Safeguard!
+
+      # Cleanup for Helm deployments
       - name: Helm
         if: inputs.cleanup == 'helm'
         env:
           release: ${{ inputs.repository }}-${{ inputs.target }}
         run: |
-          oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
-          oc project ${{ secrets.oc_namespace }} # Safeguard!
+          # Helm cleanup steps
 
           # If found, then remove
           helm status ${{ env.release }} && helm uninstall --no-hooks ${{ env.release }} || \
@@ -107,11 +114,11 @@ jobs:
           oc delete pvc data-${{ env.release }}-bitnami-pg-0 || \
             echo "Not found: pvc data-${{ env.release }}-bitnami-pg-0"
 
-      - name: OpenShift Label
+      # Cleanup for OpenShift template deployments, uses labels
+      - name: Label
         if: inputs.cleanup == 'label'
         run: |
-          oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
-          oc project ${{ secrets.oc_namespace }} # Safeguard!
+          # OC Template cleanup steps
 
           # Remove old build runs, build pods and deployment pods
           oc delete all,cm,pvc,secret -l app=${{ inputs.repository }}-${{ inputs.target }}
