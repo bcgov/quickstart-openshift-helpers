@@ -109,9 +109,10 @@ jobs:
         oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
         oc project ${{ secrets.oc_namespace }} # Safeguard!
 
-    # Stop pre-existing deployments
-    - run: |
-        # Interrupt any previous deployments (status = pending-upgrade)
+    # Only stop pre-existing deployments on PRs
+    - if: github.event_name == 'pull_request'
+      run: |
+        # Interrupt any previous PR deployments (status = pending-upgrade)
         PREVIOUS=$(helm status ${{ steps.vars.outputs.release }} -o json | jq .info.status || true)
         if [[ ${PREVIOUS} =~ pending ]]; then
           echo "Rollback triggered"
