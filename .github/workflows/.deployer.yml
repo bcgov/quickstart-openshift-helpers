@@ -138,7 +138,7 @@ jobs:
           --install --wait --atomic ${{ steps.vars.outputs.release }} \
           --timeout ${{ inputs.timeout-minutes }}m \
           --values ${{ inputs.values }} \
-          ./${{ steps.vars.outputs.release }}.tgz
+          ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr }}.tgz
 
     # Helm release history
     - run: |
