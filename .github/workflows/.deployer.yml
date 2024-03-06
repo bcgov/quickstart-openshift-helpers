@@ -97,7 +97,7 @@ jobs:
         echo "tag=${tag}" >> $GITHUB_OUTPUT
 
         # Release name includes run numbers to ensure uniqueness
-        release=${{ github.event.repository.name }}-${{ inputs.environment || steps.vars.outputs.tag }}-${{ github.run_number }}
+        release=${{ github.event.repository.name }}-${{ inputs.environment || steps.tag.outputs.tag }}-${{ github.run_number }}
 
         # Summary
         echo "tag=${tag}"

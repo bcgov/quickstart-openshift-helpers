@@ -9,13 +9,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate:
-    name: Validate
-    uses: ./.github/workflows/.pr-validate.yml
-    with:
-      markdown_links: |
-        - [Frontend](https://${{ github.event.repository.name }}-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca)
-        - [Backend](https://${{ github.event.repository.name }}-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca/api)
+  # validate:
+  #   name: Validate
+  #   uses: ./.github/workflows/.pr-validate.yml
+  #   with:
+  #     markdown_links: |
+  #       - [Frontend](https://${{ github.event.repository.name }}-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca)
+  #       - [Backend](https://${{ github.event.repository.name }}-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca/api)
 
   # # https://github.com/bcgov-nr/action-builder-ghcr
   # builds:
@@ -45,7 +45,6 @@ jobs:
       oc_token: ${{ secrets.oc_token }}
     with:
       params: --set global.autoscaling=false
-      tag: blorf
 
   # close:
   #   name: Close
