@@ -125,7 +125,7 @@ jobs:
       run: |
         # Package Helm chart using release name
         sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
-        helm package -u . --app-version="${{ steps.vars.outputs.tag }}-run${{ github.run_number }}" --version=${{ steps.pr.outputs.pr }}
+        helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr }}
 
     # Deploy Helm chart
     - working-directory: ${{ inputs.directory }}
