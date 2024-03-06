@@ -4,15 +4,12 @@ on:
   workflow_call:
     inputs:
       ### Required
-      release:
-        description: Deployment release; usually repo-name-[PR|test|prod]
-        required: true
-        type: string
+      # Only secrets!
 
       ### Typical / recommended
       directory:
         description: Chart directory
-        default:  'charts/${{ github.event.repository.name }}'
+        default:  'charts/app'
         required: false
         type: string
       environment:
@@ -83,27 +80,26 @@ jobs:
         echo "No deployment required/triggered!"
         exit 0
 
-    # Use any provided tags, otherwise use the PR number
+    # Variables
     - id: pr
       uses: bcgov-nr/action-get-pr@v0.0.1
     - id: vars
       run: |
-        # Vars: repo_release and tag
+        # Vars: tag and release
 
-        # Set repo release name, which tacks the repo name onto the release, avoiding collisions
-        echo "repo_release=${{ github.event.repository.name }}-${{ inputs.release }}" >> $GITHUB_OUTPUT
+        # Tag defaults to PR number, but can be overridden by inputs.tag
+        tag=${{ inputs.tag || steps.pr.outputs.pr }}
 
-        # Set tag to PR number if inputs.tag not provided
-        if [ -z ${{ inputs.tag }} ]; then
-          echo "tag=${{ steps.pr.outputs.pr }}" >> $GITHUB_OUTPUT
-        else
-          echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
-        fi
+        # Release name includes run numbers to ensure uniqueness
+        release=${{ github.event.repository.name }}-${{ inputs.environment || steps.pr.outputs.pr }}
 
         # Summary
-        echo "repo_release=${{ github.event.repository.name }}-${{ inputs.release }}"
-        echo "tag (if pr num)=${{ steps.pr.outputs.pr }}"
-        echo "tag (if inputs)=${{ inputs.tag }}"
+        echo "tag=${tag}"
+        echo "release=${release}"
+
+        # Output
+        echo "tag=${tag}" >> $GITHUB_OUTPUT
+        echo "release=${release}" >> $GITHUB_OUTPUT
 
     ### Deploy
 
@@ -116,21 +112,20 @@ jobs:
     # Stop pre-existing deployments
     - run: |
         # Interrupt any previous deployments (status = pending-upgrade)
-        PREVIOUS=$(helm status ${{ steps.vars.outputs.repo_release }} -o json | jq .info.status || true)
+        PREVIOUS=$(helm status ${{ steps.vars.outputs.release }} -o json | jq .info.status || true)
         if [[ ${PREVIOUS} =~ pending ]]; then
           echo "Rollback triggered"
-          helm rollback ${{ steps.vars.outputs.repo_release }} || \
-            helm uninstall ${{ steps.vars.outputs.repo_release }}
+          helm rollback ${{ steps.vars.outputs.release }} || \
+            helm uninstall ${{ steps.vars.outputs.release }}
         fi
 
     # Package Helm chart
     - uses: actions/checkout@v4
     - working-directory: ${{ inputs.directory }}
       run: |
-        # Package Helm chart
-        helm package -u . --app-version="${{ steps.vars.outputs.tag }}" --version=${{ steps.pr.outputs.pr }}
-        mv *.tgz package.tgz
-        echo "New package name: package.tgz"
+        # Package Helm chart using release name
+        sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
+        helm package -u . --app-version="${{ steps.vars.outputs.tag }}-run${{ github.run_number }}" --version=${{ steps.pr.outputs.pr }}
 
     # Deploy Helm chart
     - working-directory: ${{ inputs.directory }}
@@ -140,15 +135,15 @@ jobs:
           --set-string global.repository=${{ github.repository }} \
           --set-string global.tag=${{ steps.vars.outputs.tag }} \
           ${{ inputs.params }} \
-          --install --wait --atomic ${{ steps.vars.outputs.repo_release }} \
+          --install --wait --atomic ${{ steps.vars.outputs.release }} \
           --timeout ${{ inputs.timeout-minutes }}m \
           --values ${{ inputs.values }} \
-          ./package.tgz
+          ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr }}.tgz
 
     # Helm release history
     - run: |
         # Helm release history
-        helm history ${{ steps.vars.outputs.repo_release }}
+        helm history ${{ steps.vars.outputs.release }}
 
     ### Cleanup
 

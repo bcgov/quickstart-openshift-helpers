@@ -17,50 +17,12 @@ jobs:
         - [Frontend](https://${{ github.event.repository.name }}-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca)
         - [Backend](https://${{ github.event.repository.name }}-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca/api)
 
-  # https://github.com/bcgov-nr/action-builder-ghcr
-  builds:
-    name: Builds
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        package: [migrations, backend, frontend]
-    timeout-minutes: 10
-    steps:
-      - uses: bcgov-nr/action-builder-ghcr@v2.0.2
-        id: builds
-        with:
-          keep_versions: 50
-          package: ${{ matrix.package }}
-          repository: bcgov/quickstart-openshift
-          tag: ${{ github.event.number }}
-          tag_fallback: latest
-          triggers: ('${{ matrix.package }}/')
-
   deploys:
     name: Deploys
-    needs: [builds]
+    needs: [validate]
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.oc_namespace }}
       oc_token: ${{ secrets.oc_token }}
     with:
-      params: --set global.autoscaling=false
-      release: ${{ github.event.number }}
-
-  close:
-    name: Close
-    needs: [deploys]
-    uses: ./.github/workflows/.pr-close.yml
-    secrets:
-      oc_namespace: ${{ secrets.oc_namespace }}
-      oc_token: ${{ secrets.oc_token }}
-    with:
-      cleanup: helm
-
-  results:
-    name: PR Results
-    needs: [validate, deploys, close]
-    if: always() && !failure()
-    runs-on: ubuntu-22.04
-    steps:
-      - run: echo "Workflow completed successfully!"
+      tag: latest
