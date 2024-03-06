@@ -24,4 +24,3 @@ jobs:
       oc_token: ${{ secrets.oc_token }}
     with:
       environment: test
-      params: --set global.autoscaling=false
