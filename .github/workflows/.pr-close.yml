@@ -62,6 +62,7 @@ jobs:
     steps:
       - id: packages
         run: |
+          # Convert packages to JSON array for job matrix
           echo "packages=$(jq -cn '$ARGS.positional' --args ${{ inputs.packages }})"
           echo "packages=$(jq -cn '$ARGS.positional' --args ${{ inputs.packages }})" >> $GITHUB_OUTPUT
 
