@@ -16,21 +16,8 @@ on:
         required: true
 
 jobs:
-  vars:
-    name: Set Variables
-    outputs:
-      pr: ${{ steps.pr.outputs.pr }}
-    runs-on: ubuntu-22.04
-    timeout-minutes: 1
-    steps:
-      # Get PR number for squash merges to main
-      - name: PR Number
-        id: pr
-        uses: bcgov-nr/action-get-pr@v0.0.1
-
   deploy-test:
     name: Deploy (test)
-    needs: [vars]
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.oc_namespace }}
@@ -38,4 +25,3 @@ jobs:
     with:
       environment: test
       params: --set global.autoscaling=false
-      release: test
