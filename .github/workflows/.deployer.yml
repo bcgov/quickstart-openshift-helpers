@@ -9,7 +9,7 @@ on:
       ### Typical / recommended
       directory:
         description: Chart directory
-        default:  'charts/${{ github.event.repository.name }}'
+        default:  'charts/app'
         required: false
         type: string
       environment:
