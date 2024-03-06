@@ -45,21 +45,22 @@ jobs:
       oc_token: ${{ secrets.oc_token }}
     with:
       params: --set global.autoscaling=false
+      tag: blorf
 
-  close:
-    name: Close
-    needs: [deploys]
-    uses: ./.github/workflows/.pr-close.yml
-    secrets:
-      oc_namespace: ${{ secrets.oc_namespace }}
-      oc_token: ${{ secrets.oc_token }}
-    with:
-      cleanup: helm
+  # close:
+  #   name: Close
+  #   needs: [deploys]
+  #   uses: ./.github/workflows/.pr-close.yml
+  #   secrets:
+  #     oc_namespace: ${{ secrets.oc_namespace }}
+  #     oc_token: ${{ secrets.oc_token }}
+  #   with:
+  #     cleanup: helm
 
-  results:
-    name: PR Results
-    needs: [validate, deploys, close]
-    if: always() && !failure()
-    runs-on: ubuntu-22.04
-    steps:
-      - run: echo "Workflow completed successfully!"
+  # results:
+  #   name: PR Results
+  #   needs: [validate, deploys, close]
+  #   if: always() && !failure()
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #     - run: echo "Workflow completed successfully!"
