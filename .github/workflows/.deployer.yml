@@ -9,7 +9,7 @@ on:
       ### Typical / recommended
       directory:
         description: Chart directory
-        default:  'charts/app'
+        default:  'charts/appq'
         required: false
         type: string
       environment:
@@ -124,7 +124,7 @@ jobs:
     - working-directory: ${{ inputs.directory }}
       run: |
         # Package Helm chart
-        helm package -u . --app-version="${{ steps.vars.outputs.tag }}" --version=${{ steps.pr.outputs.pr }}
+        helm package -u . --app-version="${{ steps.vars.outputs.tag }}-run${{ github.run_number }}" --version=${{ steps.pr.outputs.pr }}
         mv *.tgz package.tgz
         echo "New package name: package.tgz"
 
