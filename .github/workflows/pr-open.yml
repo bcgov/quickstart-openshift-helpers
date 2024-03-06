@@ -17,31 +17,32 @@ jobs:
         - [Frontend](https://${{ github.event.repository.name }}-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca)
         - [Backend](https://${{ github.event.repository.name }}-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca/api)
 
-  # Retags, meant to look like builds
-  builds:
-    name: Fake Builds
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        package: [migrations, backend, frontend]
-    timeout-minutes: 1
-    steps:
-      - uses: shrink/actions-docker-registry-tag@v4
-        with:
-          registry: ghcr.io
-          repository: ${{ github.repository }}/${{ matrix.package }}
-          target: latest
-          tags: ${{ github.event.number }}
+  # # Retags, meant to look like builds
+  # builds:
+  #   name: Fake Builds
+  #   runs-on: ubuntu-22.04
+  #   strategy:
+  #     matrix:
+  #       package: [migrations, backend, frontend]
+  #   timeout-minutes: 1
+  #   steps:
+  #     - uses: shrink/actions-docker-registry-tag@v4
+  #       with:
+  #         registry: ghcr.io
+  #         repository: ${{ github.repository }}/${{ matrix.package }}
+  #         target: latest
+  #         tags: ${{ github.event.number }}
 
   deploys:
     name: Deploys
-    needs: [builds]
+    # needs: [builds]
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.oc_namespace }}
       oc_token: ${{ secrets.oc_token }}
     with:
       params: --set global.autoscaling=false
+      tag: latest
 
   # close:
   #   name: Close
