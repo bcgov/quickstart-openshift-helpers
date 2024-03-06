@@ -83,8 +83,14 @@ jobs:
     # Variables
     - id: pr
       uses: bcgov-nr/action-get-pr@v0.0.1
+    - id: tag
+      run: |
+        tag=${{ inputs.tag || steps.pr.outputs.pr }}
+        echo "tag=${tag}" >> $GITHUB_OUTPUT
+      
     - id: vars
-      run: | # Vars: tag and release
+      run: |
+        # Vars: tag and release
 
         # Tag defaults to PR number, but can be overridden by inputs.tag
         tag=${{ inputs.tag || steps.pr.outputs.pr }}
