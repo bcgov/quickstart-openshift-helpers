@@ -45,7 +45,6 @@ jobs:
       oc_token: ${{ secrets.oc_token }}
     with:
       params: --set global.autoscaling=false
-      release: ${{ github.event.number }}
 
   close:
     name: Close

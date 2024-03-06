@@ -4,10 +4,7 @@ on:
   workflow_call:
     inputs:
       ### Required
-      release:
-        description: Deployment release; usually repo-name-[PR|test|prod]
-        required: true
-        type: string
+      # Nothing!
 
       ### Typical / recommended
       directory:
@@ -83,27 +80,27 @@ jobs:
         echo "No deployment required/triggered!"
         exit 0
 
-    # Use any provided tags, otherwise use the PR number
+    # Variables
     - id: pr
       uses: bcgov-nr/action-get-pr@v0.0.1
     - id: vars
-      run: |
-        # Vars: repo_release and tag
+      run: | # Vars: tag and release
 
-        # Set repo release name, which tacks the repo name onto the release, avoiding collisions
-        echo "repo_release=${{ github.event.repository.name }}-${{ inputs.release }}-${{ github.run_number }}" >> $GITHUB_OUTPUT
+        # Tag defaults to PR number, but can be overridden by inputs.tag
+        tag=${{ inputs.tag || steps.pr.outputs.pr }}
 
-        # Set tag to PR number if inputs.tag not provided
-        if [ -z ${{ inputs.tag }} ]; then
-          echo "tag=${{ steps.pr.outputs.pr }}" >> $GITHUB_OUTPUT
-        else
-          echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
-        fi
+        # Release name includes run numbers to ensure uniqueness
+        release=${{ github.event.repository.name }}-${{ inputs.environment || $tag }}-${{ github.run_number }}
 
         # Summary
-        echo "repo_release=${{ github.event.repository.name }}-${{ inputs.release }}-${{ github.run_number }}"
-        echo "tag (if pr num)=${{ steps.pr.outputs.pr }}"
-        echo "tag (if inputs)=${{ inputs.tag }}"
+        echo "tag=${tag}"
+        echo "release=${release}"
+
+        # Output
+        echo "tag=${tag}" >> $GITHUB_OUTPUT
+        echo "release=${release}" >> $GITHUB_OUTPUT
+
+        exit 1
 
     ### Deploy
 
@@ -116,11 +113,11 @@ jobs:
     # Stop pre-existing deployments
     - run: |
         # Interrupt any previous deployments (status = pending-upgrade)
-        PREVIOUS=$(helm status ${{ steps.vars.outputs.repo_release }} -o json | jq .info.status || true)
+        PREVIOUS=$(helm status ${{ steps.vars.outputs.release }} -o json | jq .info.status || true)
         if [[ ${PREVIOUS} =~ pending ]]; then
           echo "Rollback triggered"
-          helm rollback ${{ steps.vars.outputs.repo_release }} || \
-            helm uninstall ${{ steps.vars.outputs.repo_release }}
+          helm rollback ${{ steps.vars.outputs.release }} || \
+            helm uninstall ${{ steps.vars.outputs.release }}
         fi
 
     # Package Helm chart
@@ -140,7 +137,7 @@ jobs:
           --set-string global.repository=${{ github.repository }} \
           --set-string global.tag=${{ steps.vars.outputs.tag }} \
           ${{ inputs.params }} \
-          --install --wait --atomic ${{ steps.vars.outputs.repo_release }} \
+          --install --wait --atomic ${{ steps.vars.outputs.release }} \
           --timeout ${{ inputs.timeout-minutes }}m \
           --values ${{ inputs.values }} \
           ./package.tgz
@@ -148,7 +145,7 @@ jobs:
     # Helm release history
     - run: |
         # Helm release history
-        helm history ${{ steps.vars.outputs.repo_release }}
+        helm history ${{ steps.vars.outputs.release }}
 
     ### Cleanup
 
