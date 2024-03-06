@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       ### Required
-      # Nothing!
+      # Only secrets!
 
       ### Typical / recommended
       directory:
@@ -91,7 +91,7 @@ jobs:
         tag=${{ inputs.tag || steps.pr.outputs.pr }}
 
         # Release name includes run numbers to ensure uniqueness
-        release=${{ github.event.repository.name }}-${{ inputs.environment || steps.pr.outputs.pr }}-run${{ github.run_number }}
+        release=${{ github.event.repository.name }}-${{ inputs.environment || steps.pr.outputs.pr }}
 
         # Summary
         echo "tag=${tag}"
