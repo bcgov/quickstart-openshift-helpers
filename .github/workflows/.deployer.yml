@@ -83,21 +83,15 @@ jobs:
     # Variables
     - id: pr
       uses: bcgov-nr/action-get-pr@v0.0.1
-    - id: tag
-      run: |
-        tag=${{ inputs.tag || steps.pr.outputs.pr }}
-        echo "tag=${tag}" >> $GITHUB_OUTPUT
-      
     - id: vars
       run: |
         # Vars: tag and release
 
         # Tag defaults to PR number, but can be overridden by inputs.tag
         tag=${{ inputs.tag || steps.pr.outputs.pr }}
-        echo "tag=${tag}" >> $GITHUB_OUTPUT
 
         # Release name includes run numbers to ensure uniqueness
-        release=${{ github.event.repository.name }}-${{ inputs.environment || steps.tag.outputs.tag }}-${{ github.run_number }}
+        release=${{ github.event.repository.name }}-${{ inputs.environment || steps.pr.outputs.pr }}-run${{ github.run_number }}
 
         # Summary
         echo "tag=${tag}"
@@ -106,8 +100,6 @@ jobs:
         # Output
         echo "tag=${tag}" >> $GITHUB_OUTPUT
         echo "release=${release}" >> $GITHUB_OUTPUT
-
-        exit 1
 
     ### Deploy
 
