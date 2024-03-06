@@ -17,9 +17,9 @@ jobs:
         - [Frontend](https://${{ github.event.repository.name }}-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca)
         - [Backend](https://${{ github.event.repository.name }}-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca/api)
 
-  # Fake PR build, just a retag
+  # Retags, meant to look like builds
   builds:
-    name: Retags / Fake Builds
+    name: Fake Builds
     runs-on: ubuntu-22.04
     strategy:
       matrix:

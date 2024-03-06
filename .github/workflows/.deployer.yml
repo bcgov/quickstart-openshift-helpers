@@ -123,10 +123,9 @@ jobs:
     - uses: actions/checkout@v4
     - working-directory: ${{ inputs.directory }}
       run: |
-        # Package Helm chart
+        # Package Helm chart using release name
+        sed -i 's/^name:.*/name: ${{ steps.vars.outputs.release }}/' Chart.yaml
         helm package -u . --app-version="${{ steps.vars.outputs.tag }}-run${{ github.run_number }}" --version=${{ steps.pr.outputs.pr }}
-        mv *.tgz package.tgz
-        echo "New package name: package.tgz"
 
     # Deploy Helm chart
     - working-directory: ${{ inputs.directory }}
@@ -139,7 +138,7 @@ jobs:
           --install --wait --atomic ${{ steps.vars.outputs.release }} \
           --timeout ${{ inputs.timeout-minutes }}m \
           --values ${{ inputs.values }} \
-          ./package.tgz
+          ./${{ steps.vars.outputs.release }}.tgz
 
     # Helm release history
     - run: |
