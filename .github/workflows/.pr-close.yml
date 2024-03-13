@@ -69,6 +69,7 @@ jobs:
   retags:
     name: Retags
     needs: vars
+    if: github.event.pull_request.merged == 'true' && github.event.pull_request.base.ref == '${{ inputs.merge_branch }}'
     runs-on: ubuntu-22.04
     permissions:
       packages: write
@@ -83,7 +84,6 @@ jobs:
           echo "github.event.pull_request.base.ref = ${{ github.event.pull_request.base.ref }} (expected main)"
 
       - uses: shrink/actions-docker-registry-tag@v4
-        if: ( github.event.pull_request.merged == true )&&( github.event.pull_request.base.ref == '${{ inputs.merge_branch }}' )
         with:
           registry: ghcr.io
           repository: ${{ inputs.organization }}/${{ inputs.repository }}/${{ matrix.package }}
