@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   cleanup:
-    name: Cleanup OpenShift and/or Promote Images
+    name: Cleanup
     uses: ./.github/workflows/.pr-close.yml
     secrets: inherit
     with:

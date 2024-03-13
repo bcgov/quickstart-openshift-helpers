@@ -64,7 +64,7 @@ jobs:
   deployer:
     name: Helm
     environment: ${{ inputs.environment }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       tag: ${{ steps.triggers.outputs.triggered }}
     steps:
