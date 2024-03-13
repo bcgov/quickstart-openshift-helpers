@@ -79,8 +79,9 @@ jobs:
     timeout-minutes: 1
     steps:
       - run: |
-          github.event.pull_request.merged: ${{ github.event.pull_request.merged }} (expected true)
-          github.event.pull_request.base.ref == ${{ github.event.pull_request.base.ref }} (expected main)
+          # Output contitional run vars
+          echo "github.event.pull_request.merged = ${{ github.event.pull_request.merged }} (expected true)"
+          echo "github.event.pull_request.base.ref = ${{ github.event.pull_request.base.ref }} (expected main)"
 
       - uses: shrink/actions-docker-registry-tag@v4
         with:
