@@ -55,7 +55,9 @@ on:
 
 jobs:
   vars:
-    if: inputs.packages != ''
+    if: ${{ inputs.packages != '' }} &&
+      ${{ github.event.pull_request.merged == 'true' }}&&
+      ${{ github.event.pull_request.base.ref == '${{ inputs.merge_branch }}' }}
     runs-on: ubuntu-latest
     outputs:
       packages: ${{ steps.packages.outputs.packages }}
