@@ -55,9 +55,9 @@ on:
 
 jobs:
   vars:
-    if: ${{ inputs.packages != '' }} &&
-      ${{ github.event.pull_request.merged == 'true' }}&&
-      ${{ github.event.pull_request.base.ref == '${{ inputs.merge_branch }}' }}
+    if: ${{ inputs.packages != '' &&
+      github.event.pull_request.merged == 'true' &&
+      github.event.pull_request.base.ref == '${{ inputs.merge_branch }}' }}
     runs-on: ubuntu-latest
     outputs:
       packages: ${{ steps.packages.outputs.packages }}
@@ -71,7 +71,8 @@ jobs:
   retags:
     name: Retags
     needs: vars
-    if: ${{ github.event.pull_request.merged == 'true' && github.event.pull_request.base.ref == '${{ inputs.merge_branch }}' }}
+    if: ${{ github.event.pull_request.merged == 'true' &&
+      github.event.pull_request.base.ref == '${{ inputs.merge_branch }}' }}
     runs-on: ubuntu-22.04
     permissions:
       packages: write
