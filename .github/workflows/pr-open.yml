@@ -17,25 +17,25 @@ jobs:
         - [Frontend](https://${{ github.event.repository.name }}-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca)
         - [Backend](https://${{ github.event.repository.name }}-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca/api)
 
-  # builds:
-  #   name: Fake Builds (retags)
-  #   runs-on: ubuntu-22.04
-  #   strategy:
-  #     matrix:
-  #       package: [backend, frontend, migrations]
-  #   timeout-minutes: 1
-  #   steps:
-  #     - uses: shrink/actions-docker-registry-tag@v4
-  #       with:
-  #         registry: ghcr.io
-  #         repository: ${{ github.repository }}/${{ matrix.package }}
-  #         target: latest
-  #         tags: ${{ github.event.number }}
+  builds:
+    name: Fake Builds (retags)
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        package: [backend, frontend, migrations]
+    timeout-minutes: 1
+    steps:
+      - uses: shrink/actions-docker-registry-tag@v4
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/${{ matrix.package }}
+          target: latest
+          tags: ${{ github.event.number }}
 
-  # deploys:
-  #   name: Deploys
-  #   needs: [builds, validate]
-  #   uses: ./.github/workflows/.deployer.yml
-  #   secrets:
-  #     oc_namespace: ${{ secrets.oc_namespace }}
-  #     oc_token: ${{ secrets.oc_token }}
+  deploys:
+    name: Deploys
+    needs: [builds, validate]
+    uses: ./.github/workflows/.deployer.yml
+    secrets:
+      oc_namespace: ${{ secrets.oc_namespace }}
+      oc_token: ${{ secrets.oc_token }}

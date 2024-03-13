@@ -58,7 +58,7 @@ jobs:
     if: ${{ inputs.packages != '' &&
       github.event.pull_request.merged == 'true' &&
       github.event.pull_request.base.ref == inputs.merge_branch }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       packages: ${{ steps.packages.outputs.packages }}
     steps:
@@ -91,40 +91,40 @@ jobs:
           target: ${{ inputs.target }}
           tags: ${{ inputs.tag_promote }}
 
-  # # Clean up OpenShift when PR closed, no conditions
-  # cleanup:
-  #   name: OpenShift
-  #   if: inputs.cleanup == 'helm' || inputs.cleanup == 'label'
-  #   runs-on: ubuntu-22.04
-  #   timeout-minutes: 10
-  #   steps:
-  #     # OC Login
-  #     - run: |
-  #         # OC Login
-  #         oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
-  #         oc project ${{ secrets.oc_namespace }} # Safeguard!
+  # Clean up OpenShift when PR closed, no conditions
+  cleanup:
+    name: OpenShift
+    if: inputs.cleanup == 'helm' || inputs.cleanup == 'label'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      # OC Login
+      - run: |
+          # OC Login
+          oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
+          oc project ${{ secrets.oc_namespace }} # Safeguard!
 
-  #     # Cleanup for Helm deployments
-  #     - name: Helm
-  #       if: inputs.cleanup == 'helm'
-  #       env:
-  #         release: ${{ inputs.repository }}-${{ inputs.target }}
-  #       run: |
-  #         # Helm cleanup steps
+      # Cleanup for Helm deployments
+      - name: Helm
+        if: inputs.cleanup == 'helm'
+        env:
+          release: ${{ inputs.repository }}-${{ inputs.target }}
+        run: |
+          # Helm cleanup steps
 
-  #         # If found, then remove
-  #         helm status ${{ env.release }} && helm uninstall --no-hooks ${{ env.release }} || \
-  #           echo "Not found: ${{ env.release }}"
+          # If found, then remove
+          helm status ${{ env.release }} && helm uninstall --no-hooks ${{ env.release }} || \
+            echo "Not found: ${{ env.release }}"
 
-  #         # Remove Bitnami Crunchy PVCs
-  #         oc delete pvc data-${{ env.release }}-bitnami-pg-0 || \
-  #           echo "Not found: pvc data-${{ env.release }}-bitnami-pg-0"
+          # Remove Bitnami Crunchy PVCs
+          oc delete pvc data-${{ env.release }}-bitnami-pg-0 || \
+            echo "Not found: pvc data-${{ env.release }}-bitnami-pg-0"
 
-  #     # Cleanup for OpenShift template deployments, uses labels
-  #     - name: Label
-  #       if: inputs.cleanup == 'label'
-  #       run: |
-  #         # OC Template cleanup steps
+      # Cleanup for OpenShift template deployments, uses labels
+      - name: Label
+        if: inputs.cleanup == 'label'
+        run: |
+          # OC Template cleanup steps
 
-  #         # Remove old build runs, build pods and deployment pods
-  #         oc delete all,cm,pvc,secret -l app=${{ inputs.repository }}-${{ inputs.target }}
+          # Remove old build runs, build pods and deployment pods
+          oc delete all,cm,pvc,secret -l app=${{ inputs.repository }}-${{ inputs.target }}
