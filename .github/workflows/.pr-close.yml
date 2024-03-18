@@ -70,8 +70,10 @@ jobs:
           echo "packages=$(jq -cn '$ARGS.positional' --args ${{ inputs.packages }})"
           echo "github.event.pull_request.merged=${{ github.event.pull_request.merged }}"
           echo "github.event.pull_request.base.ref=${{ github.event.pull_request.base.ref }}"
+          echo "inputs.merge_branch=${{ inputs.merge_branch }}"
           echo "retag check:"
-          echo "  github.event.pull_request.merged == 'true' && github.event.pull_request.base.ref"
+          echo "  github.event.pull_request.merged == 'true' && github.event.pull_request.base.ref == 'inputs.merge_branch'"
+          echo "  => ${{ github.event.pull_request.merged == 'true' }} && ${{ github.event.pull_request.base.ref == inputs.merge_branch }}"
           echo "  => ${{ github.event.pull_request.merged == 'true' && github.event.pull_request.base.ref == inputs.merge_branch }}"
 
   retags:
