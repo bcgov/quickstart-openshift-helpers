@@ -73,11 +73,12 @@ jobs:
           echo "inputs.merge_branch=${{ inputs.merge_branch }}"
           echo "retag check:"
           echo "  github.event.pull_request.merged == 'true' && github.event.pull_request.base.ref == 'inputs.merge_branch'"
-          echo "  => ${{ github.event.pull_request.merged == 'true' }} && ${{ github.event.pull_request.base.ref == 'inputs.merge_branch' }}"
+          echo "  => ${{ github.event.pull_request.merged == 'true' }} && ${{ github.event.pull_request.base.ref == inputs.merge_branch }}"
+          echo "  => ${{ github.event.pull_request.merged == 'true' && github.event.pull_request.base.ref == inputs.merge_branch }}"
 
   retags:
     name: Retags
-    if: github.event.pull_request.merged == 'true' && github.event.pull_request.base.ref == '${{ inputs.merge_branch }}'
+    if: ${{ github.event.pull_request.merged == 'true' && github.event.pull_request.base.ref == inputs.merge_branch }}
     needs: vars
     runs-on: ubuntu-22.04
     permissions:
