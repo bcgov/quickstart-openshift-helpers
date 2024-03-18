@@ -14,7 +14,7 @@ on:
         required: false
         type: string
       packages:
-        description: 'Comma-separated list of packages to promote'
+        description: 'Space-separated list of packages to promote'
         required: false
         type: string
 
