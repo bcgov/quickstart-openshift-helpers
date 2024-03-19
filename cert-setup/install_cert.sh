@@ -37,6 +37,13 @@ echo "${DOMAIN}.cert"
 echo "${DOMAIN}.key"
 echo "${DOMAIN}.ca-cert"
 
-# https://docs.openshift.com/container-platform/4.15/networking/routes/secured-routes.html#nw-ingress-creating-an-edge-route-with-a-custom-certificate_secured-routes
-echo "Installing route"
-oc create route edge --service=${SERVICE} --cert=${DOMAIN}.cert --key=${DOMAIN}.key --ca-cert=${DOMAIN}.ca-cert --hostname=${DOMAIN}
+echo -e "\nContinue? [y/n]"
+read ACCEPT
+if [[ "${ACCEPT^}" != "Y" ]]; then
+  echo "Exiting..."
+  exit 1
+else
+  # https://docs.openshift.com/container-platform/4.15/networking/routes/secured-routes.html#nw-ingress-creating-an-edge-route-with-a-custom-certificate_secured-routes
+  echo "Installing route"
+  oc create route edge --service=${SERVICE} --cert=${DOMAIN}.cert --key=${DOMAIN}.key --ca-cert=${DOMAIN}.ca-cert --hostname=${DOMAIN}
+fi
