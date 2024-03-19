@@ -14,12 +14,29 @@ set -euo nounset
 # Vanity URL (DOMAIN)
 if [[ -z "${1:-}" ]]; then
   echo "Enter the fully qualified domain name (FQDN) name for the certificate:"
+  echo "  E.g. <app>.nrs.gov.bc.ca"
   read DOMAIN
 else
   DOMAIN="${1}"
 fi
-echo -e "\nDomain: ${DOMAIN}"
+echo -e "\nDomain: ${DOMAIN}\n"
 
-set -x
+# Vanity URL (DOMAIN)
+if [[ -z "${2:-}" ]]; then
+  echo "Enter the OpenShift service name to expose:"
+  echo "  E.g. nr-<app>-prod-frontend"
+  read SERVICE
+else
+  SERVICE="${2}"
+fi
+echo -e "\nService: ${SERVICE}\n"
+
+# Confirm
+echo "Please make sure the following files are present before continuing:"
+echo "${DOMAIN}.cert"
+echo "${DOMAIN}.key"
+echo "${DOMAIN}.ca-cert"
+
 # https://docs.openshift.com/container-platform/4.15/networking/routes/secured-routes.html#nw-ingress-creating-an-edge-route-with-a-custom-certificate_secured-routes
-oc create route edge --service=nr-forest-client-test-frontend --cert=${DOMAIN}.cert --key=${DOMAIN}.key --ca-cert=${DOMAIN}-L1K_Chain.txt --hostname=${DOMAIN}
+echo "Installing route"
+oc create route edge --service=${SERVICE} --cert=${DOMAIN}.cert --key=${DOMAIN}.key --ca-cert=${DOMAIN}.ca-cert --hostname=${DOMAIN}
