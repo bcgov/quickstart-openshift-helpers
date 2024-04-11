@@ -57,6 +57,7 @@ echo "  - Responsibility:"
 echo "  - Service Line:"
 echo "  - Project:"
 echo "  - Expense Authority:"
+echo "  - Financial Reporting Account:"
 echo ""
 echo "- Attach the newly generated CSR file only"
 
