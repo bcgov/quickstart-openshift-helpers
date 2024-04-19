@@ -39,3 +39,10 @@ jobs:
     secrets:
       oc_namespace: ${{ secrets.oc_namespace }}
       oc_token: ${{ secrets.oc_token }}
+
+  outputs:
+    name: Outputs
+    needs: [deploys]
+    runs-on: ubuntu-22.04
+    steps:
+      - run: echo "needs.deploys == ${{ toJson(needs.deploys) }}"
