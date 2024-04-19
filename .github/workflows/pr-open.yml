@@ -39,3 +39,17 @@ jobs:
     secrets:
       oc_namespace: ${{ secrets.oc_namespace }}
       oc_token: ${{ secrets.oc_token }}
+
+  results:
+    name: Results
+    needs: [deploys]
+    runs-on: ubuntu-22.04
+    steps:
+      - if: needs.deploys.outputs.triggered == 'true'
+        run: echo "Success!"
+
+      - if: needs.deploys.outputs.triggered != 'true'
+        run: |
+          # Handle fail
+          echo "needs.deploys == ${{ toJson(needs.deploys) }}"
+          exit 1
