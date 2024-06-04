@@ -39,7 +39,7 @@ echo "${DOMAIN}.ca-cert"
 
 echo -e "\nContinue? [y/n]"
 read ACCEPT
-if [[ ! "${ACCEPT^}" =~ [Yy] ]]; then
+if [[ ! "${ACCEPT}" =~ [Yy] ]]; then
   echo "Exiting..."
   exit 1
 else
