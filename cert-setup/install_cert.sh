@@ -3,7 +3,7 @@ set -euo nounset
 
 # Custom Domain Helper
 #
-# Usage: ./custom_url.sh [optional: DOMAIN]
+# Usage: ./custom_url.sh [optional: DOMAIN_WITH_PATH] [optional: OC_SERVICE]
 
 # Sorry, internal! - https://apps.nrs.gov.bc.ca/int/confluence/display/DEVGUILD/Generating+a+CSR
 # https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent
@@ -11,17 +11,24 @@ set -euo nounset
 
 ### Get inputs
 
-# Vanity URL (DOMAIN)
+# Vanity URL (domain with path)
 if [[ -z "${1:-}" ]]; then
-  echo "Enter the fully qualified domain name (FQDN) name for the certificate:"
-  echo "  E.g. <app>.nrs.gov.bc.ca"
-  read DOMAIN
+  echo "Enter the fully qualified domain name (FQDN) and any path for the certificate:"
+  echo "  E.g. <app>.nrs.gov.bc.ca/<path>"
+  read DOMAIN_WITH_PATH
 else
-  DOMAIN="${1}"
+  DOMAIN_WITH_PATH="${1}"
 fi
-echo -e "\nDomain: ${DOMAIN}\n"
 
-# Vanity URL (DOMAIN)
+# Break the URL into domain and (optional) path
+[[ ${DOMAIN_WITH_PATH} =~ .*/$ ]] || DOMAIN_WITH_PATH="${DOMAIN_WITH_PATH}/"
+DOMAIN=${DOMAIN_WITH_PATH%%/*}
+PATH=${DOMAIN_WITH_PATH#*/}
+
+echo -e "\nDomain: ${DOMAIN}"
+echo -e "Path: ${PATH}\n"
+
+# Service to route/expose
 if [[ -z "${2:-}" ]]; then
   echo "Enter the OpenShift service name to expose:"
   echo "  E.g. nr-<app>-prod-frontend"
@@ -29,6 +36,7 @@ if [[ -z "${2:-}" ]]; then
 else
   SERVICE="${2}"
 fi
+
 echo -e "\nService: ${SERVICE}\n"
 
 # Confirm
@@ -42,8 +50,13 @@ read ACCEPT
 if [[ ! "${ACCEPT}" =~ [Yy] ]]; then
   echo "Exiting..."
   exit 1
-else
-  # https://docs.openshift.com/container-platform/4.15/networking/routes/secured-routes.html#nw-ingress-creating-an-edge-route-with-a-custom-certificate_secured-routes
-  echo "Installing route"
+fi
+
+# Install the certificate, modified slightly if a path is present
+echo "Installing route"
+# https://docs.openshift.com/container-platform/4.15/networking/routes/secured-routes.html#nw-ingress-creating-an-edge-route-with-a-custom-certificate_secured-routes
+if [ -z "${PATH}" ]; then
   oc create route edge --service=${SERVICE} --cert=${DOMAIN}.cert --key=${DOMAIN}.key --ca-cert=${DOMAIN}.ca-cert --hostname=${DOMAIN} ${SERVICE}-vanity
+else
+  oc create route edge --service=${SERVICE} --cert=${DOMAIN}.cert --key=${DOMAIN}.key --ca-cert=${DOMAIN}.ca-cert --hostname=${DOMAIN} --path=${PATH} ${SERVICE}-vanity
 fi
