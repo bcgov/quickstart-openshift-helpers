@@ -31,3 +31,18 @@ Steps:
 ## Reinstall and Renewals
 
 Retain all four certificate-related files (csr, key, cert, ca-cert).  All four are required for reinstallation or recovery of deleted OpenShift routes.  The csr and key files are required with future certificate renewals.  Use `./install_cert.sh` as required.
+
+
+## Reference
+
+[How do I get a custom vanity URL for my application in Openshift?](https://stackoverflow.developer.gov.bc.ca/questions/172/176)
+
+[Creating government web presences](https://www2.gov.bc.ca/gov/content/governments/services-for-government/service-experience-digital-delivery/digital-delivery/web-property-process)
+
+[Order Domain Name Registration and Domain Name Services Article](https://ociomysc.service-now.com/sp?id=ocio_sr_kb_article_view&sysparm_article=KB0031620&sys_kb_id=c66a12a8db4c0510fa8619381396197f&spa=1)
+
+[OCP 4 platform network topology](https://digital.gov.bc.ca/cloud/services/private/internal-resources/topology/)
+
+[SSL Certificates for https://system.eao.gov.bc.ca/](https://apps.nrs.gov.bc.ca/int/jira/browse/SD-96171)
+
+[How to update route TLS certificate from CLI?](https://stackoverflow.developer.gov.bc.ca/questions/239)
