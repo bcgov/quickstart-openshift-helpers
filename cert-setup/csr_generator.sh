@@ -27,7 +27,7 @@ echo -e "\nSubject: $SUBJECT"
 # Accept or create a new subject
 echo "Accept subject? (y/n)"
 read ACCEPT
-if [[ "${ACCEPT^}" != "Y" ]]; then
+if [[ ! "${ACCEPT}" =~ [Yy] ]]; then
   echo "Subject: " && read SUBJECT
 fi
 
@@ -64,6 +64,6 @@ echo "- Attach the newly generated CSR file only"
 # Open JIRA - optional
 echo -e "\nWould you like to be redirected to Natural Resources JIRA? (y/n)"
 read ACCEPT
-if [[ "${ACCEPT^}" == "Y" ]]; then
+if [[ "${ACCEPT}" =~ [Yy] ]]; then
   xdg-open 'https://apps.nrs.gov.bc.ca/int/jira/secure/CreateIssue!default.jspa'
 fi
