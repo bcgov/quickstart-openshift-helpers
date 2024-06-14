@@ -11,6 +11,7 @@ on:
         description: Atomic deployment?  That means fail all or nothing
         default: true
         required: false
+        type: string
       directory:
         description: Chart directory
         default:  'charts/app'
