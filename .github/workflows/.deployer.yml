@@ -7,6 +7,10 @@ on:
       # Only secrets!
 
       ### Typical / recommended
+      atomic:
+        description: Atomic deployment?  That means fail all or nothing
+        default: true
+        required: false
       directory:
         description: Chart directory
         default:  'charts/app'
@@ -129,8 +133,8 @@ jobs:
           sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
           helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr }}
 
-      # Deploy Helm chart
-      - if: steps.triggers.outputs.triggered == 'true'
+      # Deploy Helm chart as atomic, with timeout
+      - if: steps.triggers.outputs.triggered == 'true' && inputs.atomic != 'false'
         working-directory: ${{ inputs.directory }}
         run: |
           # Helm upgrade/rollout
@@ -141,6 +145,18 @@ jobs:
             --install --wait --atomic ${{ steps.vars.outputs.release }} \
             --timeout ${{ inputs.timeout-minutes }}m \
             --values ${{ inputs.values }} \
+            ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr }}.tgz
+
+      # Deploy Helm chart without atomic or timeout
+      - if: steps.triggers.outputs.triggered == 'true' && inputs.atomic == 'false'
+        working-directory: ${{ inputs.directory }}
+        run: |
+          # Helm upgrade/rollout
+          helm upgrade \
+            --set-string global.repository=${{ github.repository }} \
+            --set-string global.tag=${{ steps.vars.outputs.tag }} \
+            ${{ inputs.params }} \
+            --install --wait --values ${{ inputs.values }} \
             ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr }}.tgz
 
       # Helm release history
