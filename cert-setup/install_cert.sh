@@ -60,3 +60,11 @@ if [ -z "${SUBDIR}" ]; then
 else
   oc create route edge --service=${SERVICE} --cert=${DOMAIN}.cert --key=${DOMAIN}.key --ca-cert=${DOMAIN}.ca-cert --hostname=${DOMAIN} --path=${SUBDIR} ${SERVICE}-vanity
 fi
+
+# Visit and confirm the new route
+echo -e "\nWould you like to be redirected to the new route?"
+echo -e " => https://${DOMAIN_WITH_PATH} (y/n)"
+read ACCEPT
+if [[ "${ACCEPT}" =~ [Yy] ]]; then
+  xdg-open "https://${DOMAIN_WITH_PATH}"
+fi
