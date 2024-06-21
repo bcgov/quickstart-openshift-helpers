@@ -30,8 +30,11 @@ echo -e "Subdir: ${SUBDIR}\n"
 
 # Service to route/expose
 if [[ -z "${2:-}" ]]; then
-  echo "Enter the OpenShift service name to expose:"
-  echo "  E.g. nr-<app>-prod-frontend"
+  echo -e "Services:"
+  oc get services -o name | sed 's|service/|  |g'
+
+  echo -e "\nEnter the OpenShift service name to expose:"
+  echo -e "  E.g. nr-<app>-prod-frontend"
   read SERVICE
 else
   SERVICE="${2}"
@@ -63,7 +66,7 @@ fi
 
 # Visit and confirm the new route
 echo -e "\nWould you like to be redirected to the new route?"
-echo -e " => https://${DOMAIN_WITH_PATH} (y/n)"
+echo -e " => https://${DOMAIN_WITH_PATH} [y/n]"
 read ACCEPT
 if [[ "${ACCEPT}" =~ [Yy] ]]; then
   xdg-open "https://${DOMAIN_WITH_PATH}"
