@@ -13,8 +13,8 @@ set -euo nounset
 
 # Vanity URL (domain with path)
 if [[ -z "${1:-}" ]]; then
-  echo "Enter the fully qualified domain name (FQDN) and any path for the certificate:"
-  echo "  E.g. <app>.nrs.gov.bc.ca/<path>"
+  echo "Enter the fully qualified domain name (FQDN) and any path/subdir for the certificate:"
+  echo "  E.g. <app>.nrs.gov.bc.ca/<subdir>"
   read DOMAIN_WITH_PATH
 else
   DOMAIN_WITH_PATH="${1}"
@@ -23,15 +23,18 @@ fi
 # Break the URL into domain and (optional) path
 [[ ${DOMAIN_WITH_PATH} =~ .*/$ ]] || DOMAIN_WITH_PATH="${DOMAIN_WITH_PATH}/"
 DOMAIN=${DOMAIN_WITH_PATH%%/*}
-PATH=${DOMAIN_WITH_PATH#*/}
+SUBDIR=${DOMAIN_WITH_PATH#*/}
 
 echo -e "\nDomain: ${DOMAIN}"
-echo -e "Path: ${PATH}\n"
+echo -e "Subdir: ${SUBDIR}\n"
 
 # Service to route/expose
 if [[ -z "${2:-}" ]]; then
-  echo "Enter the OpenShift service name to expose:"
-  echo "  E.g. nr-<app>-prod-frontend"
+  echo -e "Services:"
+  oc get services -o name | sed 's|service/|  |g'
+
+  echo -e "\nEnter the OpenShift service name to expose:"
+  echo -e "  E.g. nr-<app>-prod-frontend"
   read SERVICE
 else
   SERVICE="${2}"
@@ -55,8 +58,16 @@ fi
 # Install the certificate, modified slightly if a path is present
 echo "Installing route"
 # https://docs.openshift.com/container-platform/4.15/networking/routes/secured-routes.html#nw-ingress-creating-an-edge-route-with-a-custom-certificate_secured-routes
-if [ -z "${PATH}" ]; then
+if [ -z "${SUBDIR}" ]; then
   oc create route edge --service=${SERVICE} --cert=${DOMAIN}.cert --key=${DOMAIN}.key --ca-cert=${DOMAIN}.ca-cert --hostname=${DOMAIN} ${SERVICE}-vanity
 else
-  oc create route edge --service=${SERVICE} --cert=${DOMAIN}.cert --key=${DOMAIN}.key --ca-cert=${DOMAIN}.ca-cert --hostname=${DOMAIN} --path=${PATH} ${SERVICE}-vanity
+  oc create route edge --service=${SERVICE} --cert=${DOMAIN}.cert --key=${DOMAIN}.key --ca-cert=${DOMAIN}.ca-cert --hostname=${DOMAIN} --path=${SUBDIR} ${SERVICE}-vanity
+fi
+
+# Visit and confirm the new route
+echo -e "\nWould you like to be redirected to the new route?"
+echo -e " => https://${DOMAIN_WITH_PATH} [y/n]"
+read ACCEPT
+if [[ "${ACCEPT}" =~ [Yy] ]]; then
+  xdg-open "https://${DOMAIN_WITH_PATH}"
 fi
