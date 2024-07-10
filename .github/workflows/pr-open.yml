@@ -45,5 +45,5 @@ jobs:
     # needs: [validate, builds, deploys]
     needs: [validate, builds]
     uses: ./.github/workflows/.checkNeeds.yml
-    with:
-      needs: ${{ fromJSON(needs) }}
+    # with:
+    #   needs: ${{ fromJSON(needs) }}
