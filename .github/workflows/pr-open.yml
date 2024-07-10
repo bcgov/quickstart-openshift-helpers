@@ -44,3 +44,4 @@ jobs:
     name: Results
     needs: [validate, builds, deploys]
     uses: ./.github/workflows/.checkNeeds.yml
+    with: needs
