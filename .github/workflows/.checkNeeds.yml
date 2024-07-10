@@ -1,0 +1,19 @@
+name: .Helm Deployer
+
+on:
+  workflow_call:
+    ### Nothing Required!
+
+jobs:
+  results:
+    name: Results
+    runs-on: ubuntu-22.04
+    steps:
+      - if: needs.deploys.outputs.triggered == 'true'
+        run: echo "Success!"
+
+      - if: needs.deploys.outputs.triggered != 'true'
+        run: |
+          # Handle fail
+          echo "needs.deploys == ${{ toJson(needs.deploys) }}"
+          exit 1
