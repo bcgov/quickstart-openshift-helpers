@@ -2,12 +2,12 @@ name: .Helm Deployer
 
 on:
   workflow_call:
-    inputs:
-      ### Required
-      needs:
-        description: Object required to assess needs (previous jobs)
-        required: true
-        type: string
+    # inputs:
+    #   ### Required
+    #   needs:
+    #     description: Object required to assess needs (previous jobs)
+    #     required: true
+    #     type: string
 
 jobs:
   results:
