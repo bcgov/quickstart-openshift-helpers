@@ -32,17 +32,18 @@ jobs:
           target: latest
           tags: ${{ github.event.number }}
 
-  deploys:
-    name: Deploys
-    needs: [builds, validate]
-    uses: ./.github/workflows/.deployer.yml
-    secrets:
-      oc_namespace: ${{ secrets.oc_namespace }}
-      oc_token: ${{ secrets.oc_token }}
+  # deploys:
+  #   name: Deploys
+  #   needs: [builds, validate]
+  #   uses: ./.github/workflows/.deployer.yml
+  #   secrets:
+  #     oc_namespace: ${{ secrets.oc_namespace }}
+  #     oc_token: ${{ secrets.oc_token }}
 
   results:
     name: Results
-    needs: [validate, builds, deploys]
+    # needs: [validate, builds, deploys]
+    needs: [validate, builds]
     uses: ./.github/workflows/.checkNeeds.yml
     with:
-      needs: needs
+      needs: toString(needs)
