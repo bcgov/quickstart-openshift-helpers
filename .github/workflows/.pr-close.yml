@@ -113,7 +113,8 @@ jobs:
           target: ${{ inputs.target }}
           tags: ${{ inputs.tag_promote }}
 
-      - run: |
+      - if: env.RETRY == 'true'
+        run: |
           # Verify tagging after retry
           INSPECT="docker manifest inspect ghcr.io/${{ inputs.organization }}/${{ inputs.repository }}/${{ matrix.package }}"
           SOURCE=$(${INSPECT}:${{ inputs.tag_promote }} | jq -r '.manifests[] | select(.platform.architecture=="amd64") | .digest')
