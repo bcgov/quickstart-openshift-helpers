@@ -95,6 +95,15 @@ jobs:
           target: ${{ inputs.target }}
           tags: ${{ inputs.tag_promote }}
 
+      - run: |
+          # Verify tagging
+          SOURCE=$(docker manifest inspect ghcr.io/bcgov/nr-spar/sync:${{ inputs.target }} | jq -r '.manifests[] | select(.platform.architecture=="amd64") | .digest')
+          TARGET=$(docker manifest inspect ghcr.io/bcgov/nr-spar/sync:${{ inputs.tag_promote }} | jq -r '.manifests[] | select(.platform.architecture=="amd64") | .digest')
+          if [ "${SOURCE}" != "${TARGET}" ]; then
+            echo "ERROR: Tagging failed!"
+            exit 1
+          fi
+
   # Clean up OpenShift when PR closed, no conditions
   cleanup:
     name: OpenShift
