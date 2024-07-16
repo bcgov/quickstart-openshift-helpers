@@ -95,6 +95,16 @@ jobs:
           target: ${{ inputs.target }}
           tags: ${{ inputs.tag_promote }}
 
+      - run: |
+          # Verify tagging
+          INSPECT="docker manifest inspect ghcr.io/${{ inputs.organization }}/${{ inputs.repository }}/${{ matrix.package }}"
+          SOURCE=$(${INSPECT}:${{ inputs.tag_promote }} | jq -r '.manifests[] | select(.platform.architecture=="amd64") | .digest')
+          TARGET=$(${INSPECT}:${{ inputs.target }} | jq -r '.manifests[] | select(.platform.architecture=="amd64") | .digest')
+          if [ "${SOURCE}" != "${TARGET}" ]; then
+            echo "ERROR: Tagging failed!"
+            exit 1
+          fi
+
   # Clean up OpenShift when PR closed, no conditions
   cleanup:
     name: OpenShift
