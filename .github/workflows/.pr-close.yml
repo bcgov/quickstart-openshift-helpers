@@ -97,9 +97,9 @@ jobs:
 
       - run: |
           # Verify tagging
-          PACKAGE="ghcr.io/${{ inputs.organization }}/${{ inputs.repository }}/${{ matrix.package }}"
-          SOURCE=$(docker manifest inspect ${PACKAGE}:${{ inputs.tag_promote }} | jq -r '.manifests[] | select(.platform.architecture=="amd64") | .digest')
-          TARGET=$(docker manifest inspect ${PACKAGE}:${{ inputs.target }} | jq -r '.manifests[] | select(.platform.architecture=="amd64") | .digest')
+          INSPECT="docker manifest inspect ghcr.io/${{ inputs.organization }}/${{ inputs.repository }}/${{ matrix.package }}"
+          SOURCE=$(${INSPECT}:${{ inputs.tag_promote }} | jq -r '.manifests[] | select(.platform.architecture=="amd64") | .digest')
+          TARGET=$(${INSPECT}:${{ inputs.target }} | jq -r '.manifests[] | select(.platform.architecture=="amd64") | .digest')
           if [ "${SOURCE}" != "${TARGET}" ]; then
             echo "ERROR: Tagging failed!"
             exit 1
