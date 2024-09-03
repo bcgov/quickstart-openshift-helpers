@@ -17,6 +17,12 @@ on:
         description: 'Space-separated list of packages to promote'
         required: false
         type: string
+      remove_pvc:
+        required: false
+        default: ''
+        type: string
+        description: 'Comma separated list of pvc to remove.'
+
 
       ### Usually a bad idea / not recommended
       merge_branch:
@@ -158,7 +164,7 @@ jobs:
           # Remove Bitnami Crunchy PVCs
           oc delete pvc data-${{ env.release }}-bitnami-pg-0 || \
             echo "Not found: pvc data-${{ env.release }}-bitnami-pg-0"
-
+      
       # Cleanup for OpenShift template deployments, uses labels
       - name: Label
         if: inputs.cleanup == 'label'
@@ -167,3 +173,24 @@ jobs:
 
           # Remove old build runs, build pods and deployment pods
           oc delete all,cm,pvc,secret -l app=${{ inputs.repository }}-${{ inputs.target }}
+  
+  # Remove PVCs from OpenShift when PR closed
+  remove_pvc:
+    name: Remove PVCs from OpenShift
+    if: inputs.remove_pvc != ''
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      # OC Login
+      - run: |
+          # OC Login
+          oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
+          oc project ${{ secrets.oc_namespace }} # Safeguard!
+
+      - run: |
+          IFS=','; 
+          read -ra pvc_array <<< ${{ inputs.remove_pvc }}
+          for element in "${array[@]}"; do
+              oc delete pvc $element || \
+                  echo "Not found: $element"
+          done
