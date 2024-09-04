@@ -13,7 +13,10 @@ jobs:
     name: Testing
     uses: ./.github/workflows/.pr-close.yml
     with:
-      remove_pvc: "[ frontend, backend ]"
+      remove_pvc: |
+        frontend,
+        backend
+        
   # validate:
   #   name: Validate
   #   uses: ./.github/workflows/.pr-validate.yml
