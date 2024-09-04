@@ -182,7 +182,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - run: |
-          echo ${{ inputs.remove_pvc }}
+          echo "${{ inputs.remove_pvc }}"
       # # OC Login
       # - run: |
       #     # OC Login
