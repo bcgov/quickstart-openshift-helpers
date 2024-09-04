@@ -183,6 +183,9 @@ jobs:
     steps:
       - run: |
           echo "${{ inputs.remove_pvc }}"
+          for p in ${{ inputs.remove_pvc }}; do
+              echo "echo $p"
+          done
       # # OC Login
       # - run: |
       #     # OC Login
