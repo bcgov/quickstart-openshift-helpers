@@ -17,6 +17,11 @@ on:
         description: 'Space-separated list of packages to promote'
         required: false
         type: string
+      remove_pvc:
+        required: false
+        default: data-${{ inputs.repository }}-${{ inputs.target }}-bitnami-pg-0
+        type: string
+        description: 'Comma separated list of PVCs to remove'
 
       ### Usually a bad idea / not recommended
       merge_branch:
@@ -110,7 +115,6 @@ jobs:
             echo "RETRY=false" >> $GITHUB_ENV
           fi
 
-
       - uses: shrink/actions-docker-registry-tag@v4
         if: env.RETRY == 'true'
         with:
@@ -154,11 +158,7 @@ jobs:
           # If found, then remove
           helm status ${{ env.release }} && helm uninstall --no-hooks ${{ env.release }} || \
             echo "Not found: ${{ env.release }}"
-
-          # Remove Bitnami Crunchy PVCs
-          oc delete pvc data-${{ env.release }}-bitnami-pg-0 || \
-            echo "Not found: pvc data-${{ env.release }}-bitnami-pg-0"
-
+      
       # Cleanup for OpenShift template deployments, uses labels
       - name: Label
         if: inputs.cleanup == 'label'
@@ -167,3 +167,12 @@ jobs:
 
           # Remove old build runs, build pods and deployment pods
           oc delete all,cm,pvc,secret -l app=${{ inputs.repository }}-${{ inputs.target }}
+
+      # Remove PVCs from OpenShift when PR closed
+      - name: Remove PVCs
+        if: inputs.remove_pvc
+        run: |
+          # Remove PVCs
+          echo "${{ inputs.remove_pvc }}" | while IFS= read -r pvc; do
+              oc delete pvc ${pvc//,/} || echo "Not found: ${pvc//,/}"
+          done

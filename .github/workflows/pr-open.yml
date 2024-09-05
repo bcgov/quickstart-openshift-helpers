@@ -9,6 +9,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  testing:
+    name: Testing
+    uses: ./.github/workflows/.pr-close.yml
+    with:
+      remove_pvc: |
+        frontend,
+        backend
+        
   validate:
     name: Validate
     uses: ./.github/workflows/.pr-validate.yml
