@@ -171,20 +171,12 @@ jobs:
 
           # Remove old build runs, build pods and deployment pods
           oc delete all,cm,pvc,secret -l app=${{ inputs.repository }}-${{ inputs.target }}
-  
-  # Remove PVCs from OpenShift when PR closed
-  remove_pvc:
-    name: Remove PVCs from OpenShift
-    if: inputs.remove_pvc != ''
-    runs-on: ubuntu-22.04
-    timeout-minutes: 10
-    steps:
-      - run: |
-          # OC Login
-          oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
-          oc project ${{ secrets.oc_namespace }} # Safeguard!
 
-      - run: |
+      # Remove PVCs from OpenShift when PR closed
+      - name: Remove PVCs
+        if: inputs.remove_pvc
+        run: |
+          # Remove PVCs
           echo "${{ inputs.remove_pvc }}" | while IFS= read -r pvc; do
               oc delete pvc $pvc || echo "Not found: $pvc"
           done
