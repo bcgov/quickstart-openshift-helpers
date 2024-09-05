@@ -5,7 +5,7 @@
 Ticketing and administrative steps are for the Natural Resources only.  Other ministries will have their own processes.
 
 Steps:
-1. Create a certificate signing request (CSR) using `./scr_generator.sh`.
+1. Create a certificate signing request (CSR) using `./csr_generator.sh`.
 2. Create a [JIRA issue](https://apps.nrs.gov.bc.ca/int/jira/secure/CreateIssue!default.jspa).
 3. Provide details, which are glossed over in the script from step 1.
 4. Attached the CSR file generated in step 1.
