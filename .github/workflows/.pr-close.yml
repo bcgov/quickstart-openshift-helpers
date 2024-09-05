@@ -174,5 +174,5 @@ jobs:
         run: |
           # Remove PVCs
           echo "${{ inputs.remove_pvc }}" | while IFS= read -r pvc; do
-              oc delete pvc ${pvc//,/} || echo "Not found: $pvc"
+              oc delete pvc ${pvc//,/} || echo "Not found: ${pvc//,/}"
           done
