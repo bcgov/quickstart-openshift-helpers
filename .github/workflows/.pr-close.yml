@@ -19,7 +19,7 @@ on:
         type: string
       remove_pvc:
         required: false
-        default: ''
+        default: data-${{ inputs.repository }}-${{ inputs.target }}-bitnami-pg-0
         type: string
         description: 'Comma separated list of PVCs to remove'
 
@@ -158,10 +158,6 @@ jobs:
           # If found, then remove
           helm status ${{ env.release }} && helm uninstall --no-hooks ${{ env.release }} || \
             echo "Not found: ${{ env.release }}"
-
-          # Remove Bitnami Crunchy PVCs
-          oc delete pvc data-${{ env.release }}-bitnami-pg-0 || \
-            echo "Not found: pvc data-${{ env.release }}-bitnami-pg-0"
       
       # Cleanup for OpenShift template deployments, uses labels
       - name: Label
