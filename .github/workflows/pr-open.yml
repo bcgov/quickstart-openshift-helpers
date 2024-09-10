@@ -16,7 +16,7 @@ jobs:
       remove_pvc: |
         frontend,
         backend
-        
+
   validate:
     name: Validate
     uses: ./.github/workflows/.pr-validate.yml
@@ -53,10 +53,16 @@ jobs:
   deploys:
     name: Deploys
     needs: [builds, validate]
+    env:
+      TEST_SECRET: ${{ secrets.TEST_SECRET }}
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.oc_namespace }}
       oc_token: ${{ secrets.oc_token }}
+    with:
+      params: |
+        --set global.secrets.persist=false
+        --set-string global.testSecret=${{ env.TEST_SECRET }}
 
   results:
     name: Results
