@@ -49,12 +49,17 @@ jobs:
             echo "ERROR: Tagging failed!"
             exit 1
           fi
-
+  envars:
+    name: Set Environment Variables
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Set Environment Variables
+        id: env
+        run: |
+          echo TEST_SECRET=${{ secrets.TEST_SECRET }} >> $GITHUB_ENV
   deploys:
     name: Deploys
-    needs: [builds, validate]
-    env:
-      TEST_SECRET: ${{ secrets.TEST_SECRET }}
+    needs: [builds, validate, envars]
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.oc_namespace }}
