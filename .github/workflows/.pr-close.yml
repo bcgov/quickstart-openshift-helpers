@@ -61,7 +61,7 @@ on:
 jobs:
   vars:
     if: inputs.packages != ''
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       packages: ${{ steps.packages.outputs.packages }}
     steps:
@@ -85,7 +85,7 @@ jobs:
     name: Retags
     if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.merge_branch }}
     needs: vars
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       packages: write
     strategy:
@@ -138,7 +138,7 @@ jobs:
   cleanup:
     name: OpenShift
     if: inputs.cleanup == 'helm' || inputs.cleanup == 'label'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       # OC Login
