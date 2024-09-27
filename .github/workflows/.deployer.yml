@@ -109,7 +109,7 @@ jobs:
         if: steps.triggers.outputs.triggered == 'true'
         uses: redhat-actions/openshift-tools-installer@v1
         with:        
-          oc: "4.13"
+          oc: "4"
 
       # OC setup
       - if: steps.triggers.outputs.triggered == 'true'
