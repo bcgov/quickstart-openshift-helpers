@@ -141,6 +141,12 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:
+      - name: Install CLI tools from OpenShift Mirror
+        uses: redhat-actions/openshift-tools-installer@v1
+        with:        
+          oc: "4.13"
+          helm: "3.9"
+          
       # OC Login
       - run: |
           # OC Login
