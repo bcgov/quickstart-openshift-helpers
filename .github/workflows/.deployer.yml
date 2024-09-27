@@ -111,7 +111,13 @@ jobs:
         with:        
           oc: "4.13"
 
-      # OC Login
+      # OC setup
+      - if: steps.triggers.outputs.triggered == 'true'
+        uses: redhat-actions/openshift-tools-installer@v1
+        with:
+          oc: "4"
+
+      # OC login
       - if: steps.triggers.outputs.triggered == 'true'
         run: |
           # OC Login
