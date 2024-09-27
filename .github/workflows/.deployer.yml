@@ -109,7 +109,9 @@ jobs:
         uses: redhat-actions/openshift-tools-installer@v1
         with:        
           oc: "4.13"
-          helm: "3.9"
+          #helm: "3.9"
+      - name: helm check
+        run: helm version
 
       # OC Login
       - if: steps.triggers.outputs.triggered == 'true'
