@@ -45,11 +45,11 @@ jobs:
           PREFIX: ${{ github.event.repository.name }}
         with:
           add_markdown: |
-            ---
+            :---:
 
             Thanks for the PR!
 
-            Deployments, as required, will be available below:
+            Deployments :rocket:, as required, will be available below:
             ${{ inputs.markdown_links }}
 
             Please create PRs in draft mode.  Mark as ready to enable:
