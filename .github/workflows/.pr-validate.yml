@@ -45,7 +45,7 @@ jobs:
           PREFIX: ${{ github.event.repository.name }}
         with:
           add_markdown: |
-            | Thanks for the PR! :metal: | Please create PRs in draft mode.  Mark as ready to enable: | After merge, new images are deployed in: |
+            | Thanks for the PR! :metal: | Please create PRs in draft :construction: mode.  Mark as ready to enable below workflow | After merge, new images are deployed using below workflow |
             | ------------------ | ---------------------------------------------------------- | ---------------------------------------- |
             | Deployments :rocket:, as required, will be available below: | [Analysis Workflow :gear:](https://github.com/${{ github.repository }}/actions/workflows/analysis.yml) | [Merge Workflow :gear:](https://github.com/${{ github.repository }}/actions/workflows/merge.yml) |
             ${{ inputs.markdown_links }}
