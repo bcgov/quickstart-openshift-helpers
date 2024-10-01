@@ -47,7 +47,7 @@ jobs:
           add_markdown: |
             | Thanks for the PR! | Please create PRs in draft mode.  Mark as ready to enable: | After merge, new images are deployed in: |
             | ------------------ | ---------------------------------------------------------- | ---------------------------------------- |
-            | Deployments :rocket:, as required, will be available below: | - [Analysis Workflow](https://github.com/${{ github.repository }}/actions/workflows/analysis.yml) | - [Merge Workflow](https://github.com/${{ github.repository }}/actions/workflows/merge.yml) |
+            | Deployments :rocket:, as required, will be available below: | [Analysis Workflow :gear:](https://github.com/${{ github.repository }}/actions/workflows/analysis.yml) | [Merge Workflow :gear:](https://github.com/${{ github.repository }}/actions/workflows/merge.yml) |
             ${{ inputs.markdown_links }}
 
       # Notify of any failures
