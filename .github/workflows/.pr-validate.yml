@@ -49,7 +49,6 @@ jobs:
             | ------------------ | ---------------------------------------------------------- | ---------------------------------------- |
             | Deployments :rocket:, as required, will be available below: | [Analysis Workflow :gear:](https://github.com/${{ github.repository }}/actions/workflows/analysis.yml) | [Merge Workflow :gear:](https://github.com/${{ github.repository }}/actions/workflows/merge.yml) |
             ${{ inputs.markdown_links }}
-
       # Notify of any failures
       - name: Errors
         if: failure()
