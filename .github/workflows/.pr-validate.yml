@@ -45,18 +45,10 @@ jobs:
           PREFIX: ${{ github.event.repository.name }}
         with:
           add_markdown: |
-            |Thanks for the PR!|
-            |------------------|
-            
-
-            |Deployments :rocket:, as required, will be available below:|
-            |${{ inputs.markdown_links }}|
-
-            |Please create PRs in draft mode.  Mark as ready to enable:|
-            |- [Analysis Workflow](https://github.com/${{ github.repository }}/actions/workflows/analysis.yml)|
-
-            |After merge, new images are deployed in:|
-            |- [Merge Workflow](https://github.com/${{ github.repository }}/actions/workflows/merge.yml)|
+            | Thanks for the PR! | Please create PRs in draft mode.  Mark as ready to enable: | After merge, new images are deployed in: |
+            | ------------------ | ---------------------------------------------------------- | ---------------------------------------- |
+            | Deployments :rocket:, as required, will be available below: | - [Analysis Workflow](https://github.com/${{ github.repository }}/actions/workflows/analysis.yml) | - [Merge Workflow](https://github.com/${{ github.repository }}/actions/workflows/merge.yml) |
+            ${{ inputs.markdown_links }}
 
       # Notify of any failures
       - name: Errors
