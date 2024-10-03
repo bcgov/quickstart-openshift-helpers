@@ -8,6 +8,10 @@ on:
         description: 'Type of cleanup; e.g. helm or label'
         required: false
         type: string
+      environment:
+        description: Environment name; omit for PRs
+        required: false
+        type: string
       oc_server:
         default: https://api.silver.devops.gov.bc.ca:6443
         description: 'OpenShift server'
@@ -138,6 +142,7 @@ jobs:
   cleanup:
     name: OpenShift
     if: inputs.cleanup == 'helm' || inputs.cleanup == 'label'
+    environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
