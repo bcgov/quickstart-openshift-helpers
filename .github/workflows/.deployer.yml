@@ -57,13 +57,6 @@ on:
         description: 'Has a deployment has been triggered?'
         value: ${{ jobs.deployer.outputs.triggered }}
 
-    secrets:
-      oc_namespace:
-        description: OpenShift namespace
-        required: true
-      oc_token:
-        description: OpenShift token
-        required: true
 
 jobs:
   deployer:
