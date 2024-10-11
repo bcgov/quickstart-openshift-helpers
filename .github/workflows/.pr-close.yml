@@ -23,7 +23,7 @@ on:
         type: string
       remove_pvc:
         required: false
-        default: data-${{ inputs.repository }}-${{ inputs.target }}-bitnami-pg-0
+        default: data-${{ github.event.repository.name }}-${{ github.event.number }}-bitnami-pg-0
         type: string
         description: 'Comma separated list of PVCs to remove'
 
