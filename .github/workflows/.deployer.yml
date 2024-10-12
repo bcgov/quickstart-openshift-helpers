@@ -111,17 +111,15 @@ jobs:
         with:        
           oc: "4"
 
-      # OC setup
-      - if: steps.triggers.outputs.triggered == 'true'
-        uses: redhat-actions/openshift-tools-installer@v1
-        with:
-          oc: "4"
 
-      # OC login
+      # OC login and acquire short lived token
       - if: steps.triggers.outputs.triggered == 'true'
         run: |
           # OC Login
-          oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
+          OC_TEMP_TOKEN=$(curl -k -X POST ${{ inputs.oc_server }}/api/v1/namespaces/${{ secrets.oc_namespace }}/serviceaccounts/pipeline/token --header "Authorization: Bearer ${{ secrets.oc_token }}" -d '{"spec": {"expirationSeconds": 1200}}' -H 'Content-Type: application/json; charset=utf-8' | jq .status.token)
+          echo "::add-mask::$OC_TEMP_TOKEN"
+
+          oc login --token=$OC_TEMP_TOKEN --server=${{ inputs.oc_server }}
           oc project ${{ secrets.oc_namespace }} # Safeguard!
 
       # Only stop pre-existing deployments on PRs (status = pending-upgrade)
