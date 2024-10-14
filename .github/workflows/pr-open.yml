@@ -57,6 +57,8 @@ jobs:
     secrets:
       oc_namespace: ${{ secrets.oc_namespace }}
       oc_token: ${{ secrets.oc_token }}
+    with:
+      tag: ${{ github.event.number }}
 
   results:
     name: Results
