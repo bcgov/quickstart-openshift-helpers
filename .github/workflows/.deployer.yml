@@ -95,14 +95,19 @@ jobs:
 
           # Release name includes run numbers to ensure uniqueness
           release=${{ github.event.repository.name }}-${{ inputs.environment || steps.pr.outputs.pr || inputs.tag }}
-
-          # Summary
+          
+          # version, to support helm packaging for non-pr based releases (workflow_dispatch). default to 1.0.0+github run number
+          version=1.0.0+${{ github.run_number }}
+          
+            # Summary
           echo "tag=${tag}"
           echo "release=${release}"
+          echo "version=${version}"
 
           # Output
           echo "tag=${tag}" >> $GITHUB_OUTPUT
           echo "release=${release}" >> $GITHUB_OUTPUT
+          echo "version=${version}" >> $GITHUB_OUTPUT
 
       ### Deploy
       - name: Install CLI tools from OpenShift Mirror
@@ -141,7 +146,7 @@ jobs:
         run: |
           # Helm package
           sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
-          helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || inputs.tag }}
+          helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
 
       # Deploy Helm chart as atomic, with timeout
       - if: steps.triggers.outputs.triggered == 'true' && inputs.atomic != 'false'
@@ -155,7 +160,7 @@ jobs:
             --install --wait --atomic ${{ steps.vars.outputs.release }} \
             --timeout ${{ inputs.timeout-minutes }}m \
             --values ${{ inputs.values }} \
-            ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || inputs.tag }}.tgz
+            ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz
 
       # Deploy Helm chart without atomic or timeout
       - if: steps.triggers.outputs.triggered == 'true' && inputs.atomic == 'false'
@@ -168,7 +173,7 @@ jobs:
             ${{ inputs.params }} \
             ${{ steps.vars.outputs.release }} \
             --install --wait --values ${{ inputs.values }} \
-            ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || inputs.tag }}.tgz
+            ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz
 
       # Helm release history
       - if: steps.triggers.outputs.triggered == 'true'
