@@ -168,6 +168,10 @@ jobs:
           # If found, then remove
           helm status ${{ env.release }} && helm uninstall --no-hooks ${{ env.release }} || \
             echo "Not found: ${{ env.release }}"
+          
+          # Sometimes teams prefer to persist secret objects across rollouts of same PR, so the below make sure it is deleted when pr is closed.
+          oc delete secret -l app.kubernetes.io/instance=${{ env.release }} || \
+            echo "No Persisted, Secret found for: ${{ env.release }}"
       
       # Cleanup for OpenShift template deployments, uses labels
       - name: Label
