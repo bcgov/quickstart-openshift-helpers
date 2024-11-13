@@ -62,11 +62,6 @@ jobs:
         with:
           args: ${{ inputs.flyway_args }}
 
-      - name: Create Output Folder
-        run: |
-          mkdir -p output/schema
-          chmod a+rwx -R output
-
       - name: Run Schemaspy
         run: docker run --network host -v "$PWD/output:/output" schemaspy/schemaspy:6.2.4 -t pgsql11 -db default -host 127.0.0.1 -port 5432 -u postgres -p default -schemas ${{ inputs.schemaspy_schema }}
 
