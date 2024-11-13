@@ -48,7 +48,7 @@ jobs:
 
   deploys:
     name: Deploys
-    needs: [builds, validate]
+    needs: [builds]
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.oc_namespace }}
@@ -56,7 +56,7 @@ jobs:
 
   results:
     name: Results
-    needs: [deploys, schema-spy]
+    needs: [deploys, schema-spy, validate]
     runs-on: ubuntu-24.04
     steps:
       - if: needs.deploys.outputs.triggered == 'true'
