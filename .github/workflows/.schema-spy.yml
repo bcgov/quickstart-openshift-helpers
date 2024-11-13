@@ -56,7 +56,8 @@ jobs:
         id: vars
         run: |
           echo "FLYWAY_IMAGE='docker://flyway/flyway:10'"
-          echo "FLYWAY_IMAGE=${{ inputs.flyway_image }}" >> $GITHUB_OUTPUT
+          echo "FLYWAY_IMAGE=\'${{ inputs.flyway_image }}\'"
+          echo "FLYWAY_IMAGE=\'${{ inputs.flyway_image }}\'" >> $GITHUB_OUTPUT
 
       # - name: Flyway
       #   uses: ${{ steps.vars.outputs.FLYWAY_IMAGE }}
