@@ -9,8 +9,13 @@ on:
         default: 'filesystem:./migrations'
         required: false
         type: string
-      schemas:
+      flyway_schema:
         description: 'Flyway default schema'
+        default: 'users'
+        required: false
+        type: string
+      schemaspy_schema:
+        description: 'SchemaSpy default schema'
         default: 'users'
         required: false
         type: string
@@ -43,7 +48,7 @@ jobs:
           FLYWAY_USER: postgres
           FLYWAY_PASSWORD: default
           FLYWAY_LOCATIONS: ${{ inputs.flyway_locations }}
-          FLYWAY_DEFAULT_SCHEMA: ${{ inputs.schemas }}
+          FLYWAY_DEFAULT_SCHEMA: ${{ inputs.flyway_schema }}
         with:
           args: info migrate info
 
@@ -53,7 +58,7 @@ jobs:
           chmod a+rwx -R output
 
       - name: Run Schemaspy
-        run: docker run --network host -v "$PWD/output:/output" schemaspy/schemaspy:6.2.4 -t pgsql11 -db default -host 127.0.0.1 -port 5432 -u postgres -p default -schemas ${{ inputs.schemas }}
+        run: docker run --network host -v "$PWD/output:/output" schemaspy/schemaspy:6.2.4 -t pgsql11 -db default -host 127.0.0.1 -port 5432 -u postgres -p default -schemas ${{ inputs.schemaspy_schema }}
 
       - name: Deploy to Pages
         uses: JamesIves/github-pages-deploy-action@v4
