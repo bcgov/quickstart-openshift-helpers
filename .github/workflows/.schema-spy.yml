@@ -4,8 +4,13 @@ on:
   workflow_call:
     inputs:
       ### Typical / recommended
+      flyway_args:
+        description: 'Flyway arguments'
+        default: 'info migrate info'
+        required: false
+        type: string
       flyway_locations:
-        description: 'Location of Flyway migrations'
+        description: 'Flyway migrations location'
         default: 'filesystem:./migrations'
         required: false
         type: string
@@ -50,7 +55,7 @@ jobs:
           FLYWAY_LOCATIONS: ${{ inputs.flyway_locations }}
           FLYWAY_DEFAULT_SCHEMA: ${{ inputs.flyway_schema }}
         with:
-          args: info migrate info
+          args: ${{ inputs.flyway_args }}
 
       - name: Create Output Folder
         run: |
