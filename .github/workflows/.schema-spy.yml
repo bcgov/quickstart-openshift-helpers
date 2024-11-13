@@ -51,6 +51,13 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - name: Parse inputs.flyway_input
+        run: |
+          echo "::set-output name=flyway_args::${{ inputs.flyway_args }}"
+          echo "::set-output name=flyway_image::${{ inputs.flyway_image }}"
+          echo "::set-output name=flyway_locations::${{ inputs.flyway_locations }}"
+          echo "::set-output name=flyway_schema::${{ inputs.flyway_schema }}"
+          echo "::set-output name=schemaspy_schema::${{ inputs.schemaspy_schema }}"
       - name: Flyway
         uses: 'docker://flyway/flyway:10'
         env:
@@ -61,6 +68,11 @@ jobs:
           FLYWAY_DEFAULT_SCHEMA: ${{ inputs.flyway_schema }}
         with:
           args: ${{ inputs.flyway_args }}
+
+      - name: Create Output Folder
+        run: |
+          mkdir -p output/schema
+          chmod a+rwx -R output
 
       - name: Run Schemaspy
         run: docker run --network host -v "$PWD/output:/output" schemaspy/schemaspy:6.2.4 -t pgsql11 -db default -host 127.0.0.1 -port 5432 -u postgres -p default -schemas ${{ inputs.schemaspy_schema }}
