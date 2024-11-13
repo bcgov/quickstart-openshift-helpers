@@ -9,6 +9,11 @@ on:
         default: 'info migrate info'
         required: false
         type: string
+      flyway_image:
+        description: 'Flyway Docker image'
+        default: 'flyway/flyway:10'
+        required: false
+        type: string
       flyway_locations:
         description: 'Flyway migrations location'
         default: 'filesystem:./migrations'
@@ -47,7 +52,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Flyway
-        uses: docker://flyway/flyway:10
+        uses: docker://${{ inputs.flyway_image }}
         env:
           FLYWAY_URL: jdbc:postgresql://postgres:5432/default
           FLYWAY_USER: postgres
