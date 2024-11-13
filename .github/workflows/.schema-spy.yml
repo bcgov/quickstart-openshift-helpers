@@ -52,7 +52,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Flyway
-        uses: docker://${{ inputs.flyway_image }}
+        uses: docker://'${{ inputs.flyway_image }}'
         env:
           FLYWAY_URL: jdbc:postgresql://postgres:5432/default
           FLYWAY_USER: postgres
