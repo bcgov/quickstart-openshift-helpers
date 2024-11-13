@@ -9,14 +9,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  pr-close:
-    name: PR Close
-    uses: ./.github/workflows/.pr-close.yml
-    with:
-      remove_pvc: |
-        frontend,
-        backend
-
   schema-spy:
     name: Schema Spy
     uses: ./.github/workflows/.schema-spy.yml
@@ -64,7 +56,7 @@ jobs:
 
   results:
     name: Results
-    needs: [deploys, pr-close, schema-spy]
+    needs: [deploys, schema-spy]
     runs-on: ubuntu-24.04
     steps:
       - if: needs.deploys.outputs.triggered == 'true'
