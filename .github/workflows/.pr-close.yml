@@ -104,41 +104,7 @@ jobs:
           target: ${{ inputs.target }}
           tags: ${{ inputs.tag_promote }}
 
-      - run: |
-          # Verify tagging
-          INSPECT="docker manifest inspect ghcr.io/${{ inputs.organization }}/${{ inputs.repository }}/${{ matrix.package }}"
-          SOURCE=$(${INSPECT}:${{ inputs.tag_promote }} | jq -r '.manifests[] | select(.platform.architecture=="amd64") | .digest')
-          TARGET=$(${INSPECT}:${{ inputs.target }} | jq -r '.manifests[] | select(.platform.architecture=="amd64") | .digest')
-          echo "SOURCE: ${SOURCE}"
-          echo "TARGET: ${TARGET}"
-          if [ "${SOURCE}" != "${TARGET}" ]; then
-            echo "ERROR: Tagging failed!"
-            echo "RETRY=true" >> $GITHUB_ENV
-          else
-            echo "ERROR: Tagging success!"
-            echo "RETRY=false" >> $GITHUB_ENV
-          fi
-
-      - uses: shrink/actions-docker-registry-tag@v4
-        if: env.RETRY == 'true'
-        with:
-          registry: ghcr.io
-          repository: ${{ inputs.organization }}/${{ inputs.repository }}/${{ matrix.package }}
-          target: ${{ inputs.target }}
-          tags: ${{ inputs.tag_promote }}
-
-      - if: env.RETRY == 'true'
-        run: |
-          # Verify tagging after retry
-          INSPECT="docker manifest inspect ghcr.io/${{ inputs.organization }}/${{ inputs.repository }}/${{ matrix.package }}"
-          SOURCE=$(${INSPECT}:${{ inputs.tag_promote }} | jq -r '.manifests[] | select(.platform.architecture=="amd64") | .digest')
-          TARGET=$(${INSPECT}:${{ inputs.target }} | jq -r '.manifests[] | select(.platform.architecture=="amd64") | .digest')
-          if [ "${SOURCE}" != "${TARGET}" ]; then
-            echo "ERROR: Tagging failed!"
-            exit 1
-          fi
-
-  # Clean up OpenShift when PR closed, no conditions
+  # Clean up OpenShift when PR closed
   cleanup:
     name: OpenShift
     if: inputs.cleanup == 'helm' || inputs.cleanup == 'label'
