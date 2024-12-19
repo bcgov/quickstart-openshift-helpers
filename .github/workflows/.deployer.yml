@@ -69,7 +69,7 @@ jobs:
   deployer:
     name: Helm
     environment: ${{ inputs.environment }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     outputs:
       triggered: ${{ steps.triggers.outputs.triggered }}
     steps:
@@ -115,7 +115,6 @@ jobs:
         uses: redhat-actions/openshift-tools-installer@v1
         with:        
           oc: "4"
-
 
       # OC login and acquire short lived token
       - if: steps.triggers.outputs.triggered == 'true'

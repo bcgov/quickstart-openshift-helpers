@@ -69,7 +69,7 @@ on:
 jobs:
   vars:
     if: inputs.packages != ''
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     outputs:
       packages: ${{ steps.packages.outputs.packages }}
     steps:
@@ -84,16 +84,12 @@ jobs:
           echo "github.event.pull_request.merged=${{ github.event.pull_request.merged }}"
           echo "github.event.pull_request.base.ref=${{ github.event.pull_request.base.ref }}"
           echo "inputs.merge_branch=${{ inputs.merge_branch }}"
-          echo "retag check:"
-          echo "  github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.merge_branch"
-          echo "  => ${{ github.event.pull_request.merged == true }} && ${{ github.event.pull_request.base.ref == inputs.merge_branch }}"
-          echo "  => ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.merge_branch }}"
 
   retags:
     name: Retags
     if: ${{ github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.merge_branch }}
     needs: vars
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     permissions:
       packages: write
     strategy:
@@ -108,46 +104,12 @@ jobs:
           target: ${{ inputs.target }}
           tags: ${{ inputs.tag_promote }}
 
-      - run: |
-          # Verify tagging
-          INSPECT="docker manifest inspect ghcr.io/${{ inputs.organization }}/${{ inputs.repository }}/${{ matrix.package }}"
-          SOURCE=$(${INSPECT}:${{ inputs.tag_promote }} | jq -r '.manifests[] | select(.platform.architecture=="amd64") | .digest')
-          TARGET=$(${INSPECT}:${{ inputs.target }} | jq -r '.manifests[] | select(.platform.architecture=="amd64") | .digest')
-          echo "SOURCE: ${SOURCE}"
-          echo "TARGET: ${TARGET}"
-          if [ "${SOURCE}" != "${TARGET}" ]; then
-            echo "ERROR: Tagging failed!"
-            echo "RETRY=true" >> $GITHUB_ENV
-          else
-            echo "ERROR: Tagging success!"
-            echo "RETRY=false" >> $GITHUB_ENV
-          fi
-
-      - uses: shrink/actions-docker-registry-tag@v4
-        if: env.RETRY == 'true'
-        with:
-          registry: ghcr.io
-          repository: ${{ inputs.organization }}/${{ inputs.repository }}/${{ matrix.package }}
-          target: ${{ inputs.target }}
-          tags: ${{ inputs.tag_promote }}
-
-      - if: env.RETRY == 'true'
-        run: |
-          # Verify tagging after retry
-          INSPECT="docker manifest inspect ghcr.io/${{ inputs.organization }}/${{ inputs.repository }}/${{ matrix.package }}"
-          SOURCE=$(${INSPECT}:${{ inputs.tag_promote }} | jq -r '.manifests[] | select(.platform.architecture=="amd64") | .digest')
-          TARGET=$(${INSPECT}:${{ inputs.target }} | jq -r '.manifests[] | select(.platform.architecture=="amd64") | .digest')
-          if [ "${SOURCE}" != "${TARGET}" ]; then
-            echo "ERROR: Tagging failed!"
-            exit 1
-          fi
-
-  # Clean up OpenShift when PR closed, no conditions
+  # Clean up OpenShift when PR closed
   cleanup:
     name: OpenShift
     if: inputs.cleanup == 'helm' || inputs.cleanup == 'label'
     environment: ${{ inputs.environment }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       # OC setup

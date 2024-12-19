@@ -23,7 +23,7 @@ jobs:
 
   builds:
     name: Fake Builds (retags)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         package: [backend, frontend, migrations]
@@ -57,7 +57,7 @@ jobs:
   results:
     name: Results
     needs: [deploys, schema-spy, validate]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - if: needs.deploys.outputs.triggered == 'true'
         run: echo "Success!"

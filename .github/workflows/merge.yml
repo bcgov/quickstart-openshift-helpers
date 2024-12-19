@@ -10,9 +10,9 @@ on:
       - '!.github/workflows/**'
   workflow_dispatch:
     inputs:
-      pr_no:
-        description: "PR-numbered container set to deploy"
-        type: number
+      tag:
+        description: "Image tag set to deploy; e.g. PR number or prod"
+        type: string
         required: true
 
 concurrency:
@@ -29,3 +29,4 @@ jobs:
       oc_token: ${{ secrets.oc_token }}
     with:
       environment: test
+      tag: ${{ inputs.tag }}
