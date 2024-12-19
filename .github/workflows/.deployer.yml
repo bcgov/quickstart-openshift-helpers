@@ -116,7 +116,6 @@ jobs:
         with:        
           oc: "4"
 
-
       # OC login and acquire short lived token
       - if: steps.triggers.outputs.triggered == 'true'
         shell: bash
