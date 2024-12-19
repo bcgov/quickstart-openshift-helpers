@@ -22,7 +22,7 @@ on:
 jobs:
   checks:
     name: Checks
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       # Conventional commits
       - name: Conventional Commits
