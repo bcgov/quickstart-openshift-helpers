@@ -76,7 +76,7 @@ jobs:
       ### Triggers, tag and release
 
       # Check triggers (omitted or matched) for deployment
-      - uses: bcgov-nr/action-diff-triggers@v0.2.0
+      - uses: bcgov/action-diff-triggers@v0.2.0
         id: triggers
         with:
           triggers: ${{ inputs.triggers }}
@@ -84,7 +84,7 @@ jobs:
       # Variables
       - if: ${{ steps.triggers.outputs.triggered == 'true' &&  inputs.tag  == '' }}
         id: pr
-        uses: bcgov-nr/action-get-pr@v0.0.1
+        uses: bcgov/action-get-pr@v0.0.1
       - if: steps.triggers.outputs.triggered == 'true'
         id: vars
         run: |
