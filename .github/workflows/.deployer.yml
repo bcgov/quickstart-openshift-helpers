@@ -82,7 +82,7 @@ jobs:
           triggers: ${{ inputs.triggers }}
 
       # Variables
-      - if: ${{ steps.triggers.outputs.triggered == 'true' &&  inputs.tag  == '' }}
+      - if: steps.triggers.outputs.triggered == 'true' &&  inputs.tag  == ''
         id: pr
         uses: bcgov/action-get-pr@v0.0.1
       - if: steps.triggers.outputs.triggered == 'true'
