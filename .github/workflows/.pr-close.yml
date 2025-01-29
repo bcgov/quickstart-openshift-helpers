@@ -112,16 +112,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      # OC setup
-      - uses: redhat-actions/openshift-tools-installer@v1
+      # OC setup and login
+      - name: Install CLI tools from OpenShift Mirror
+        uses: bcgov/action-oc-runner@v0.3.0
         with:
-          oc: "4.14.37"
-
-      # OC Login
-      - run: |
-          # OC Login
-          oc login --token=${{ secrets.oc_token }} --server=${{ inputs.oc_server }}
-          oc project ${{ secrets.oc_namespace }} # Safeguard!
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ inputs.oc_server }}
 
       # Cleanup for Helm deployments
       - name: Helm
