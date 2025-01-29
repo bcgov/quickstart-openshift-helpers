@@ -69,7 +69,7 @@ on:
 jobs:
   vars:
     if: inputs.packages != ''
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       packages: ${{ steps.packages.outputs.packages }}
     steps:
@@ -89,7 +89,7 @@ jobs:
     name: Retags
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == inputs.merge_branch
     needs: vars
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       packages: write
     strategy:
@@ -109,7 +109,7 @@ jobs:
     name: OpenShift
     if: inputs.cleanup == 'helm' || inputs.cleanup == 'label'
     environment: ${{ inputs.environment }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       # OC setup
