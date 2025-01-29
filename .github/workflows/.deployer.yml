@@ -76,6 +76,10 @@ jobs:
       ### Triggers, tag and release
 
       # Variables
+      - if: inputs.tag  == ''
+        id: pr
+        uses: bcgov/action-get-pr@v0.0.1
+
       - name: Install CLI tools from OpenShift Mirror
         id: vars
         if: inputs.tag  == ''
