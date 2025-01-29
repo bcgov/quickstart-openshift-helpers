@@ -111,10 +111,11 @@ jobs:
 
       ### Deploy
       - name: Install CLI tools from OpenShift Mirror
-        if: steps.triggers.outputs.triggered == 'true'
-        uses: redhat-actions/openshift-tools-installer@v1
-        with:        
-          oc: "4"
+        uses: bcgov/action-oc-runner@v0.3.0
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ inputs.oc_server }}
 
       # OC login and acquire short lived token
       - if: steps.triggers.outputs.triggered == 'true'
