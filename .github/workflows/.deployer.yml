@@ -80,21 +80,19 @@ jobs:
         id: pr
         uses: bcgov/action-get-pr@v0.0.1
 
-      - name: Install CLI tools from OpenShift Mirror
+      - name: Vars
         id: vars
         run: |
-          # Vars: tag and release
-
           # Tag defaults to PR number, but can be overridden by inputs.tag
           tag=${{ inputs.tag || steps.pr.outputs.pr }}
 
           # Release name includes run numbers to ensure uniqueness
           release=${{ github.event.repository.name }}-${{ inputs.environment || inputs.tag || steps.pr.outputs.pr }}
           
-          # version, to support helm packaging for non-pr based releases (workflow_dispatch). default to 1.0.0+github run number
-          version=1.0.0+${{ github.run_number }}
+          # Version; non-PR releases (e.g. workflow_dispatch) default to 1.0.0 + github run number
+          version=${{ steps.pr.outputs.pr || '1.0.0-${{ github.run_number }}' }}
           
-            # Summary
+          # Summary
           echo "tag=${tag}"
           echo "release=${release}"
           echo "version=${version}"
@@ -114,8 +112,6 @@ jobs:
           oc_server: ${{ inputs.oc_server }}
           triggers: ${{ inputs.triggers }}
           commands: |
-            # Only stop pre-existing deployments on PRs (status = pending-upgrade)
-
             # Interrupt any previous deployments (PR only)
             PREVIOUS=$(helm status ${{ steps.vars.outputs.release }} -o json | jq .info.status || true)
             if [[ ${PREVIOUS} =~ pending ]]; then
@@ -136,7 +132,8 @@ jobs:
             # Package Helm chart
             cd ${{ inputs.directory }}
             sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
-            helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
+            helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" \
+              --version=${{ steps.vars.outputs.version }}
 
             # Helm upgrade/rollout
             helm upgrade \
@@ -147,7 +144,7 @@ jobs:
               ${{ steps.vars.outputs.release }} \
               --timeout ${{ inputs.timeout-minutes }}m \
               --values ${{ inputs.values }} \
-              ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz
+              ./${{ github.event.repository.name }}-${{ steps.vars.outputs.version }}.tgz
 
             # Helm release history
             helm history ${{ steps.vars.outputs.release }}
