@@ -103,7 +103,8 @@ jobs:
           echo "version=${version}" >> $GITHUB_OUTPUT
 
           # Test
-          thinger=${${{ steps.blorf.outputs.pr }}:-'1.0.0-${{ github.run_number }}'}
+          # thinger=${${{ steps.blorf.outputs.pr }}:-'1.0.0-${{ github.run_number }}'}
+          thinger=${{ steps.blorf.outputs.pr || '1.0.0-${{ github.run_number }}' }}
           echo "thinger=${thinger}"
 
       ### Deploy
