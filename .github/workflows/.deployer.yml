@@ -89,8 +89,8 @@ jobs:
           # Release name includes run numbers to ensure uniqueness
           release=${{ github.event.repository.name }}-${{ inputs.environment || inputs.tag || steps.pr.outputs.pr }}
           
-          # Version; non-PR releases (e.g. workflow_dispatch) default to 1.0.0 + github run number
-          version=${{ steps.pr.outputs.pr || '1.0.0-${{ github.run_number }}' }}
+          # Version, used for non-PR releases
+          version=1.0.0-${{ github.run_number }}
           
           # Summary
           echo "tag=${tag}"
@@ -101,11 +101,6 @@ jobs:
           echo "tag=${tag}" >> $GITHUB_OUTPUT
           echo "release=${release}" >> $GITHUB_OUTPUT
           echo "version=${version}" >> $GITHUB_OUTPUT
-
-          # Test
-          PR=${{ steps.pr.outputs.pr }}
-          thinger=${PR:-1.0.0-${{ github.run_number }}'}
-          echo "thinger=${thinger}"
 
       ### Deploy
       - name: Interrupt deployments (PR only)
@@ -138,7 +133,7 @@ jobs:
             cd ${{ inputs.directory }}
             sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
             helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" \
-              --version=${{ steps.vars.outputs.version }}
+              --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
 
             # Helm upgrade/rollout
             helm upgrade \
@@ -149,7 +144,7 @@ jobs:
               ${{ steps.vars.outputs.release }} \
               --timeout ${{ inputs.timeout-minutes }}m \
               --values ${{ inputs.values }} \
-              ./${{ github.event.repository.name }}-${{ steps.vars.outputs.version }}.tgz
+              ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz
 
             # Helm release history
             helm history ${{ steps.vars.outputs.release }}
