@@ -112,40 +112,44 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      # OC setup and login
-      - name: Install CLI tools from OpenShift Mirror
+      - name: Helm Cleanup
+        env:
+          release: ${{ inputs.repository }}-${{ inputs.target }}
+        if: inputs.cleanup == 'helm'
         uses: bcgov/action-oc-runner@v0.3.0
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ inputs.oc_server }}
+          command: |
+            # Cleanup for Helm deployments
 
-      # Cleanup for Helm deployments
-      - name: Helm
-        if: inputs.cleanup == 'helm'
-        env:
-          release: ${{ inputs.repository }}-${{ inputs.target }}
-        run: |
-          # Helm cleanup steps
-
-          # If found, then remove
-          helm status ${{ env.release }} && helm uninstall --no-hooks ${{ env.release }} || \
-            echo "Not found: ${{ env.release }}"
+            # If found, then remove
+            helm status ${{ env.release }} && helm uninstall --no-hooks ${{ env.release }} || \
+              echo "Not found: ${{ env.release }}"
       
-      # Cleanup for OpenShift template deployments, uses labels
-      - name: Label
+      - name: OC Template (label) Cleanup
         if: inputs.cleanup == 'label'
-        run: |
-          # OC Template cleanup steps
+        uses: bcgov/action-oc-runner@v0.3.0
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ inputs.oc_server }}
+          command: |
+            # Cleanup for OpenShift template deployments, uses labels
 
-          # Remove old build runs, build pods and deployment pods
-          oc delete all,cm,pvc,secret -l app=${{ inputs.cleanup_name }}-${{ inputs.target }}
+            # Remove old build runs, build pods and deployment pods
+            oc delete all,cm,pvc,secret -l app=${{ inputs.cleanup_name }}-${{ inputs.target }}
 
-      # Remove PVCs from OpenShift when PR closed
       - name: Remove PVCs
         if: inputs.remove_pvc
-        run: |
-          # Remove PVCs
-          echo "${{ inputs.remove_pvc }}" | while IFS= read -r pvc; do
-              oc delete pvc ${pvc//,/} || echo "Not found: ${pvc//,/}"
-          done
+        uses: bcgov/action-oc-runner@v0.3.0
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ inputs.oc_server }}
+          command: |
+            # Remove PVCs from OpenShift when PR closed
+            echo "${{ inputs.remove_pvc }}" | while IFS= read -r pvc; do
+                oc delete pvc ${pvc//,/} || echo "Not found: ${pvc//,/}"
+            done
