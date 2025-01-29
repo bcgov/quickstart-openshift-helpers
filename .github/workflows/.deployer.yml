@@ -102,6 +102,10 @@ jobs:
           echo "release=${release}" >> $GITHUB_OUTPUT
           echo "version=${version}" >> $GITHUB_OUTPUT
 
+          # Test
+          thinger=${${{ steps.blorf.outputs.pr }}:-'1.0.0-${{ github.run_number }}'}
+          echo "thinger=${thinger}"
+
       ### Deploy
       - name: Interrupt deployments (PR only)
         if: github.event_name == 'pull_request'
