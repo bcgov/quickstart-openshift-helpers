@@ -116,7 +116,7 @@ jobs:
         env:
           release: ${{ inputs.repository }}-${{ inputs.target }}
         if: inputs.cleanup == 'helm'
-        uses: bcgov/action-oc-runner@v0.4.0
+        uses: bcgov/action-oc-runner@v1.0.0
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
@@ -130,7 +130,7 @@ jobs:
       
       - name: OC Template (label) Cleanup
         if: inputs.cleanup == 'label'
-        uses: bcgov/action-oc-runner@v0.4.0
+        uses: bcgov/action-oc-runner@v1.0.0
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
@@ -143,7 +143,7 @@ jobs:
 
       - name: Remove PVCs
         if: inputs.remove_pvc
-        uses: bcgov/action-oc-runner@v0.4.0
+        uses: bcgov/action-oc-runner@v1.0.0
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
