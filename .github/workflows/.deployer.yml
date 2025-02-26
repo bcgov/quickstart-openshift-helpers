@@ -31,6 +31,16 @@ on:
         default: ''
         required: false
         type: string
+      promote_images:
+        description: 'List of images to promote with a new tag'
+        default: ''
+        required: false
+        type: string
+      promote_tag:
+        description: 'Tag to apply to promoted images'
+        default: ''
+        required: false
+        type: string
       tag:
         description: Specify a tag to deploy; defaults to PR number
         required: false
@@ -66,11 +76,12 @@ on:
         required: true
 
 jobs:
-  deployer:
+  deploy:
     name: Helm
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     outputs:
+      tag: ${{ steps.vars.outputs.tag }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
       ### Triggers, tag and release
@@ -151,3 +162,22 @@ jobs:
 
             # Completed pod cleanup
             oc delete po --field-selector=status.phase==Succeeded || true
+
+  promote:
+    name: Promote Images
+    if: inputs.promote_images != ''
+    needs: [deploy]
+    permissions:
+      packages: write
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        package: [ fromJSON(inputs.promote_images) ]
+    timeout-minutes: 1
+    steps:
+      - uses: shrink/actions-docker-registry-tag@v4
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/${{ matrix.package }}
+          tags: ${{ inputs.promote_tags }}
+          target: ${{ needs.vars.outputs.pr }}
