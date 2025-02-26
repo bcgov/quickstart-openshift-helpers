@@ -36,7 +36,7 @@ on:
         default: ''
         required: false
         type: string
-      promote_tag:
+      promote_tags:
         description: 'Tag to apply to promoted images'
         default: ''
         required: false
