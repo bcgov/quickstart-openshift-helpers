@@ -173,7 +173,7 @@ jobs:
 
   promote:
     name: Promote Images
-    if: inputs.promote_images != ''
+    if: inputs.promote_images != '' && inputs.promote_tags != ''
     needs: [deploy]
     permissions:
       packages: write
