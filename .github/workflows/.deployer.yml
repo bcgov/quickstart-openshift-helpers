@@ -188,4 +188,4 @@ jobs:
           registry: ghcr.io
           repository: ${{ github.repository }}/${{ matrix.package }}
           tags: ${{ inputs.promote_tags }}
-          target: ${{ needs.vars.outputs.pr }}
+          target: ${{ needs.deploy.outputs.tag }}
