@@ -31,6 +31,16 @@ on:
         default: ''
         required: false
         type: string
+      promote_images:
+        description: 'List of images to promote with a new tag'
+        default: ''
+        required: false
+        type: string
+      promote_tags:
+        description: 'Tag to apply to promoted images'
+        default: ''
+        required: false
+        type: string
       tag:
         description: Specify a tag to deploy; defaults to PR number
         required: false
@@ -55,7 +65,7 @@ on:
     outputs:
       triggered:
         description: 'Has a deployment has been triggered?'
-        value: ${{ jobs.deployer.outputs.triggered }}
+        value: ${{ jobs.deploy.outputs.triggered }}
 
     secrets:
       oc_namespace:
@@ -66,11 +76,13 @@ on:
         required: true
 
 jobs:
-  deployer:
+  deploy:
     name: Helm
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     outputs:
+      packages: ${{ steps.vars.outputs.packages }}
+      tag: ${{ steps.vars.outputs.tag }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
       ### Triggers, tag and release
@@ -101,6 +113,13 @@ jobs:
           echo "tag=${tag}" >> $GITHUB_OUTPUT
           echo "release=${release}" >> $GITHUB_OUTPUT
           echo "version=${version}" >> $GITHUB_OUTPUT
+
+
+
+          # Convert packages to JSON array for job matrix
+          echo "packages=$(jq -cn '$ARGS.positional' --args ${{ inputs.promote_images }})" >> $GITHUB_OUTPUT
+
+
 
       ### Deploy
       - name: Interrupt deployments (PR only)
@@ -151,3 +170,22 @@ jobs:
 
             # Completed pod cleanup
             oc delete po --field-selector=status.phase==Succeeded || true
+
+  promote:
+    name: Promote Images
+    if: inputs.promote_images != '' && inputs.promote_tags != ''
+    needs: [deploy]
+    permissions:
+      packages: write
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        package: ${{ fromJson(needs.deploy.outputs.packages) }}
+    timeout-minutes: 1
+    steps:
+      - uses: shrink/actions-docker-registry-tag@v4
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/${{ matrix.package }}
+          tags: ${{ inputs.promote_tags }}
+          target: ${{ needs.deploy.outputs.tag }}

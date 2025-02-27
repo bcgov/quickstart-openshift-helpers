@@ -53,6 +53,9 @@ jobs:
     secrets:
       oc_namespace: ${{ secrets.oc_namespace }}
       oc_token: ${{ secrets.oc_token }}
+    with:
+      promote_images: backend frontend migrations
+      promote_tags: pr
 
   results:
     name: Results
