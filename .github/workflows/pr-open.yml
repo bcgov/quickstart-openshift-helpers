@@ -63,7 +63,7 @@ jobs:
       oc_namespace: ${{ secrets.oc_namespace }}
       oc_token: ${{ secrets.oc_token }}
     with:
-      domain: ${{ github.event.repository.name }}-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca
+      domain: example.gov.bc.ca
       oc_server: https://api.silver.devops.gov.bc.ca:6443
   results:
     name: Results
