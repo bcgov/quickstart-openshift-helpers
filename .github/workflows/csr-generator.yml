@@ -77,20 +77,10 @@ jobs:
           # Run the CSR generator script
           ./cert-setup/csr_generator.sh ${CMD_ARGS}
           
-          
-          # Save key if generated
-          if [[ -f "${{ inputs.domain }}.key" ]]; then
-            echo "::add-mask::$(cat ${{ inputs.domain }}.key | base64 -w 0)"
-            echo "key=$(cat ${{ inputs.domain }}.key | base64 -w 0)" >> $GITHUB_ENV
-            echo "key_generated=true" >> $GITHUB_ENV
-          else
-            echo "key_generated=false" >> $GITHUB_ENV
-          fi
-          
-          # Also mask and save CSR to environment instead of output
-          CSR_CONTENT=$(cat ${{ inputs.domain }}.csr | base64 -w 0)
-          echo "::add-mask::${CSR_CONTENT}"
-          echo "csr=${CSR_CONTENT}" >> $GITHUB_ENV
+          pwd
+          echo "above is the pwd"
+          ls -la
+
 
       
       - name: Create or update CSR secret in OpenShift
@@ -104,18 +94,24 @@ jobs:
           oc_token: ${{ env.OC_TOKEN }}
           oc_server: ${{ env.OC_SERVER }}
           commands: |
-            # Create secret for CSR
-            oc create secret generic ${{ inputs.domain }}-csr \
-              --from-literal=csr=${{ env.csr }} \
-              -o yaml | oc apply -f -
-            
-            # Create secret for private key if generated
-            if [[ "${{ env.key_generated }}" == "true" ]]; then
-              oc create secret generic ${{ inputs.domain }}-key \
-                --from-literal=key=${{ env.key }} \
+              # Check if CSR file exists
+              if [ -f "${{ inputs.domain }}.csr" ]; then
+                # Create secret for CSR from file
+                oc create secret generic ${{ inputs.domain }}-csr \
+                --from-file=csr=${{ inputs.domain }}.csr \
                 -o yaml | oc apply -f -
               
-              echo "Created or updated secrets for both CSR and private key"
-            else
-              echo "Created or updated secret for CSR only (used existing private key)"
-            fi
+              # Create secret for private key if generated
+              if [ -f "${{ inputs.domain }}.key" ]; then
+                oc create secret generic ${{ inputs.domain }}-key \
+                  --from-file=key=${{ inputs.domain }}.key \
+                  -o yaml | oc apply -f -
+                
+                echo "Created or updated secrets for both CSR and private key"
+              else
+                echo "Created or updated secret for CSR only (used existing private key)"
+              fi
+              else
+                echo "Error: CSR file not found"
+                exit 1
+              fi
