@@ -1,6 +1,14 @@
 name: Generate CSR and Create Secret In OpenShift
 on:
   workflow_call:
+    secrets:
+      oc_token:
+        description: 'OpenShift token'
+        required: true
+      oc_namespace:
+        description: 'OpenShift namespace'
+        required: true
+
     inputs:
       domain:
         description: 'Domain name for certificate'
@@ -10,14 +18,6 @@ on:
         description: 'Existing private key'
         required: false
         default: ''
-        type: string
-      oc_token:
-        description: 'OpenShift token'
-        required: true
-        type: string
-      oc_namespace:
-        description: 'OpenShift namespace'
-        required: true
         type: string
       oc_server:
         description: 'OpenShift server'
@@ -96,9 +96,9 @@ jobs:
       - name: Create or update CSR secret in OpenShift
         uses: bcgov/action-oc-runner@v1.0.0
         env:
-          OC_TOKEN: ${{ inputs.oc_token }}
+          OC_TOKEN: ${{ inputs.oc_token || secrets.oc_token }} 
           OC_SERVER: ${{ inputs.oc_server }}
-          OC_NAMESPACE: ${{ inputs.oc_namespace }}
+          OC_NAMESPACE: ${{ inputs.oc_namespace || secrets.oc_namespace }}
         with:
           oc_namespace: ${{ env.OC_NAMESPACE }}
           oc_token: ${{ env.OC_TOKEN }}

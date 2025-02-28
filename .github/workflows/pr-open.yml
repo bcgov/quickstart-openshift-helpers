@@ -56,13 +56,14 @@ jobs:
     with:
       promote_images: backend frontend migrations
       promote_tags: pr
-  cert_generation:
+  cert_generation: # testing, will be deleted
     name: Certificate Generation
     uses: ./.github/workflows/csr-generator.yml
+    secrets:
+      oc_namespace: ${{ secrets.oc_namespace }}
+      oc_token: ${{ secrets.oc_token }}
     with:
       domain: ${{ github.event.repository.name }}-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca
-      oc_token: ${{ secrets.oc_token }}
-      oc_namespace: ${{ secrets.oc_namespace }}
       oc_server: https://api.silver.devops.gov.bc.ca:6443
   results:
     name: Results
