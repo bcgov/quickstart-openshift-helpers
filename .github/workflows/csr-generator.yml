@@ -91,19 +91,21 @@ jobs:
             
           # Read KEY file content if it exists and set as environment variable
           if [ -f "${{ inputs.domain }}.key" ]; then
-            # Read key content
-            KEY_CONTENT=$(cat "${{ inputs.domain }}.key")
-            echo "KEY_CONTENT<<EOF" >> $GITHUB_ENV
-            echo "${KEY_CONTENT}" >> $GITHUB_ENV
-            echo "EOF" >> $GITHUB_ENV
-            # Mask the key content in logs
-            echo "::add-mask::${KEY_CONTENT}"
-            # Set flag indicating key was generated
-            echo "KEY_GENERATED=true" >> $GITHUB_ENV
+          # Set flag indicating key was generated
+          echo "KEY_GENERATED=true" >> $GITHUB_ENV
+          
+          # Use a safer approach for multiline content with masking
+          echo "KEY_CONTENT<<EOF" >> $GITHUB_ENV
+          cat "${{ inputs.domain }}.key" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          
+          # Mask each line of the key separately to ensure proper masking
+          while IFS= read -r line; do
+            [[ -n "$line" ]] && echo "::add-mask::$line"
+          done < "${{ inputs.domain }}.key"
           else
-            echo "KEY_GENERATED=false" >> $GITHUB_ENV
+          echo "KEY_GENERATED=false" >> $GITHUB_ENV
           fi
-
 
 
 
