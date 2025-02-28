@@ -1,0 +1,121 @@
+name: Generate CSR and Create Secret In OpenShift
+on:
+  workflow_call:
+    inputs:
+      domain:
+        description: 'Domain name for certificate'
+        required: true
+        type: string
+      existing_private_key:
+        description: 'Existing private key'
+        required: false
+        default: ''
+        type: string
+      oc_token:
+        description: 'OpenShift token'
+        required: true
+        type: string
+      oc_namespace:
+        description: 'OpenShift namespace'
+        required: true
+        type: string
+      oc_server:
+        description: 'OpenShift server'
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: 'Domain name for certificate'
+        required: true
+        type: string
+      existing_private_key:
+        description: 'Existing private key'
+        required: false
+        default: ''
+        type: string
+      oc_token:
+        description: 'OpenShift token'
+        required: true
+        type: string
+      oc_namespace:
+        description: 'OpenShift namespace'
+        required: true
+        type: string
+      oc_server:
+        description: 'OpenShift server'
+        required: true
+        type: string
+jobs:
+  generate-csr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Make script executable
+        run: chmod +x ./cert-setup/csr_generator.sh
+
+      - name: Generate CSR
+        id: generate-csr
+        run: |
+          # Set up command arguments based on inputs
+          CMD_ARGS=""
+          
+          # Add domain name
+          CMD_ARGS="${CMD_ARGS} ${{ inputs.domain }}"
+          # Add private key if provided
+          if [[ "${{ inputs.existing_private_key }}" != "" ]]; then
+            # Mask the private key in logs
+            echo "::add-mask::${{ inputs.existing_private_key }}"
+            # Create a temporary file for the private key with secure permissions
+            echo "${{ inputs.existing_private_key }}" > private_key.pem
+            chmod 600 private_key.pem
+            CMD_ARGS="${CMD_ARGS} private_key.pem"
+          fi
+          
+          # Run the CSR generator script
+          ./cert-setup/csr_generator.sh ${CMD_ARGS}
+          
+          
+          # Save key if generated
+          if [[ -f "${{ inputs.domain }}.key" ]]; then
+            echo "::add-mask::$(cat ${{ inputs.domain }}.key | base64 -w 0)"
+            echo "key=$(cat ${{ inputs.domain }}.key | base64 -w 0)" >> $GITHUB_ENV
+            echo "key_generated=true" >> $GITHUB_ENV
+          else
+            echo "key_generated=false" >> $GITHUB_ENV
+          fi
+          
+          # Also mask and save CSR to environment instead of output
+          CSR_CONTENT=$(cat ${{ inputs.domain }}.csr | base64 -w 0)
+          echo "::add-mask::${CSR_CONTENT}"
+          echo "csr=${CSR_CONTENT}" >> $GITHUB_ENV
+
+      
+      - name: Create or update CSR secret in OpenShift
+        uses: bcgov/action-oc-runner@v1.0.0
+        env:
+          OC_TOKEN: ${{ inputs.oc_token }}
+          OC_SERVER: ${{ inputs.oc_server }}
+          OC_NAMESPACE: ${{ inputs.oc_namespace }}
+        with:
+          oc_namespace: ${{ env.OC_NAMESPACE }}
+          oc_token: ${{ env.OC_TOKEN }}
+          oc_server: ${{ env.OC_SERVER }}
+          commands: |
+            # Create secret for CSR
+            oc create secret generic ${{ inputs.domain }}-csr \
+              --from-literal=csr=${{ env.csr }} \
+              --dry-run=client -o yaml | oc apply -f -
+            
+            # Create secret for private key if generated
+            if [[ "${{ env.key_generated }}" == "true" ]]; then
+              oc create secret generic ${{ inputs.domain }}-key \
+                --from-literal=key=${{ env.key }} \
+                --dry-run=client -o yaml | oc apply -f -
+              
+              echo "Created or updated secrets for both CSR and private key"
+            else
+              echo "Created or updated secret for CSR only (used existing private key)"
+            fi
