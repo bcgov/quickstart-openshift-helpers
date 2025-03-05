@@ -51,6 +51,11 @@ on:
         type: string
 
       ### Usually a bad idea / not recommended
+      repository:
+        description: Optionally, specify a different repo to clone
+        default: ${{ github.repository }}
+        required: false
+        type: string
       timeout-minutes:
         description: 'Timeout minutes'
         default: 10
@@ -114,12 +119,8 @@ jobs:
           echo "release=${release}" >> $GITHUB_OUTPUT
           echo "version=${version}" >> $GITHUB_OUTPUT
 
-
-
           # Convert packages to JSON array for job matrix
           echo "packages=$(jq -cn '$ARGS.positional' --args ${{ inputs.promote_images }})" >> $GITHUB_OUTPUT
-
-
 
       ### Deploy
       - name: Interrupt deployments (PR only)
@@ -129,6 +130,7 @@ jobs:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ inputs.oc_server }}
+          repository: ${{ inputs.repository }}
           triggers: ${{ inputs.triggers }}
           commands: |
             # Interrupt any previous deployments (PR only)
@@ -146,6 +148,7 @@ jobs:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ inputs.oc_server }}
+          repository: ${{ inputs.repository }}
           triggers: ${{ inputs.triggers }}
           commands: |
             # Package Helm chart
