@@ -1,0 +1,82 @@
+name: PR
+
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  whoami:
+    name: Test Command
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - id: whoami
+        uses: ./
+        with:
+          commands: oc whoami
+          oc_namespace: ${{ vars.oc_namespace }}
+          oc_server: ${{ vars.oc_server }}
+          oc_token: ${{ secrets.oc_token }}
+
+      - env:
+          outputs: ${{ toJSON(steps.whoami.outputs) }}
+        run: |
+          # Verify outputs
+          echo "Outputs: ${{ env.outputs }}"
+          if [ "${{ steps.whoami.outputs.triggered }}" != "true" ]; then
+            echo "Error!  Verify outputs."
+            exit 1
+          fi
+
+  legacy:
+    name: Test Legacy Binary
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          commands: oc version
+          oc_namespace: ${{ vars.oc_namespace }}
+          oc_server: ${{ vars.oc_server }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_version: '4.1'
+          triggers: ('action.yml')
+
+  cronjob:
+    name: Test CronJob
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cronjob
+        uses: bcgov/action-deployer-openshift@v3.2.0
+        with:
+          file: cronjob/openshift.deploy.yml
+          oc_namespace: ${{ vars.oc_namespace }}
+          oc_server: ${{ vars.oc_server }}
+          oc_token: ${{ secrets.oc_token }}
+          parameters: -p ZONE=${{ github.event.number }}
+          triggers: ('.github/' 'action.yml' 'cronjob/')
+      
+      - uses: ./
+        with:
+          cronjob: ${{ github.event.repository.name }}-${{ github.event.number }}-cronjob
+          cronjob_tail: -1
+          oc_namespace: ${{ vars.oc_namespace }}
+          oc_server: ${{ vars.oc_server }}
+          oc_token: ${{ secrets.oc_token }}
+          triggers: ('.github/' 'action.yml' 'cronjob/')
+
+  results:
+    name: PR Results
+    needs: [whoami, legacy, cronjob]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
+        run: echo "At least one job has failed." && exit 1
+      - run: echo "Success!"
