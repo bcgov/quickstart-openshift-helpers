@@ -57,8 +57,9 @@ jobs:
       atomic: false
       promote_images: backend frontend migrations
       promote_tags: pr
+      repository: bcgov/quickstart-openshift
 
-  csr-generator: # testing, will be deleted
+  cert_generation: # testing, will be deleted
     name: Certificate Generation
     uses: ./.github/workflows/csr-generator.yml
     secrets:
