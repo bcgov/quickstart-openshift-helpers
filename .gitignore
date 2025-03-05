@@ -134,3 +134,4 @@ support/*.csr
 support/*.key
 *.csr
 *.key
+.idea/**
