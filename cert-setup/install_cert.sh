@@ -57,7 +57,6 @@ fi
 
 # Install the certificate, modified slightly if a path is present
 echo "Installing route"
-set -x
 # https://docs.openshift.com/container-platform/4.15/networking/routes/secured-routes.html#nw-ingress-creating-an-edge-route-with-a-custom-certificate_secured-routes
 if [ -z "${SUBDIR}" ]; then
   oc create route edge --service=${SERVICE} --cert=${DOMAIN}.cert --key=${DOMAIN}.key --ca-cert=${DOMAIN}.ca-cert --hostname=${DOMAIN} ${SERVICE}-vanity
