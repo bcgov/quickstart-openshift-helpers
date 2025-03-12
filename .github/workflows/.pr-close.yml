@@ -121,7 +121,7 @@ jobs:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ inputs.oc_server }}
-          command: |
+          commands: |
             # Cleanup for Helm deployments
 
             # If found, then remove
@@ -135,7 +135,7 @@ jobs:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ inputs.oc_server }}
-          command: |
+          commands: |
             # Cleanup for OpenShift template deployments, uses labels
 
             # Remove old build runs, build pods and deployment pods
@@ -148,7 +148,7 @@ jobs:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ inputs.oc_server }}
-          command: |
+          commands: |
             # Remove PVCs from OpenShift when PR closed
             echo "${{ inputs.remove_pvc }}" | while IFS= read -r pvc; do
                 oc delete pvc ${pvc//,/} || echo "Not found: ${pvc//,/}"
