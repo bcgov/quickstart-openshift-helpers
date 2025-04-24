@@ -61,12 +61,14 @@ permissions: {}
 jobs:
   deploy_db:
     runs-on: ubuntu-24.04
-    if: inputs.enabled
     name: Crunchy (db)
     environment: ${{ inputs.environment }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Validate Inputs
-        if: steps.triggers.outputs.triggered == 'true' && inputs.s3_enabled
+        if: inputs.s3_enabled
         shell: bash
         run: |
           echo "S3 ie enabled for backups, checking for mandatory secrets"
