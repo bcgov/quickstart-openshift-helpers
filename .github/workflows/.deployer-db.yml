@@ -103,6 +103,8 @@ jobs:
             pwd
             echo "ls -al"
             ls -al
+            ls charts
+            ls charts/crunchy
 
             echo 'Deploying crunchy helm chart'
             cd ${{ inputs.directory }}
