@@ -98,6 +98,12 @@ jobs:
           oc_server: ${{ vars.oc_server }}
           triggers: ${{ inputs.triggers }}
           commands: |
+            echo "Troubleshooting"
+            echo "pwd"
+            pwd
+            echo "ls -al"
+            ls -al
+
             echo 'Deploying crunchy helm chart'
             cd ${{ inputs.directory }}
             if [ ${{ inputs.s3_enabled }} == true ]; then
