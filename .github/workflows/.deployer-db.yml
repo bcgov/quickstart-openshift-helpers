@@ -100,16 +100,6 @@ jobs:
           ref: chore/crunchyWorkflow
           triggers: ${{ inputs.triggers }}
           commands: |
-            echo "Troubleshooting"
-            echo "Git remove"
-            git remote -v
-            echo "pwd"
-            pwd
-            echo "ls -al"
-            ls -al
-            ls charts
-            ls charts/crunchy
-
             echo 'Deploying crunchy helm chart'
             cd ${{ inputs.directory }}
             if [ ${{ inputs.s3_enabled }} == true ]; then
@@ -125,7 +115,7 @@ jobs:
 
       - name: Add PR specific user to Crunchy DB # only for PRs
         if: github.event_name == 'pull_request'
-        uses: bcgov/action-oc-runner@13d14b8f41df24226036385510472f683350850b # v1.0.0
+        uses: bcgov/action-oc-runner@v1.2.0
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
