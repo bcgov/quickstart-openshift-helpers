@@ -58,9 +58,9 @@ jobs:
       promote_images: backend frontend migrations
       promote_tags: pr
 
-  csr-gen: # testing, will be deleted
+  csr-generator: # testing, will be deleted
     name: Certificate Generation
-    uses: ./.github/workflows/csr-generator.yml
+    uses: ./.github/workflows/csr-generatorerator.yml
     secrets:
       oc_namespace: ${{ secrets.oc_namespace }}
       oc_token: ${{ secrets.oc_token }}
@@ -70,7 +70,7 @@ jobs:
 
   results:
     name: Results
-    needs: [builds, csr-gen, deploys, schema-spy, validate]
+    needs: [builds, csr-generator, deploys, schema-spy, validate]
     runs-on: ubuntu-24.04
     steps:
       - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
