@@ -75,9 +75,22 @@ on:
         description: OpenShift token
         required: true
 
+permissions: {}
+
 jobs:
+  deployer-db:
+    name: Database
+    uses: ./.github/workflows/.deployer-db.yml
+    secrets:
+      oc_namespace: ${{ secrets.OC_NAMESPACE }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+    with:
+      environment: ${{ inputs.environment }}
+      triggers: ${{ inputs.triggers }}
+
   deploy:
     name: Helm
+    needs: deployer-db
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     outputs:
@@ -113,8 +126,6 @@ jobs:
           echo "tag=${tag}" >> $GITHUB_OUTPUT
           echo "release=${release}" >> $GITHUB_OUTPUT
           echo "version=${version}" >> $GITHUB_OUTPUT
-
-
 
           # Convert packages to JSON array for job matrix
           echo "packages=$(jq -cn '$ARGS.positional' --args ${{ inputs.promote_images }})" >> $GITHUB_OUTPUT
