@@ -58,7 +58,7 @@ jobs:
       promote_images: backend frontend migrations
       promote_tags: pr
 
-  cert_generation: # testing, will be deleted
+  csr-gen: # testing, will be deleted
     name: Certificate Generation
     uses: ./.github/workflows/csr-generator.yml
     secrets:
@@ -70,9 +70,12 @@ jobs:
 
   results:
     name: Results
-    needs: [deploys, schema-spy, validate]
+    needs: [builds, csr-gen, schema-spy, validate]
     runs-on: ubuntu-24.04
     steps:
+      - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
+        run: echo "At least one job has failed." && exit 1
+
       - if: needs.deploys.outputs.triggered == 'true'
         run: echo "Success!"
 
