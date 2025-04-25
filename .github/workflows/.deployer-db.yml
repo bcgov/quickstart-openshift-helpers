@@ -95,7 +95,7 @@ jobs:
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ vars.oc_server }}
+          oc_server: ${{ inputs.oc_server }}
           repository: bcgov/quickstart-openshift-helpers
           ref: chore/crunchyWorkflow
           triggers: ${{ inputs.triggers }}
