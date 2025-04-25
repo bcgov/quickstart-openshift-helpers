@@ -96,9 +96,12 @@ jobs:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ vars.oc_server }}
+          repository: bcgov/quickstart-openshift-helpers
           triggers: ${{ inputs.triggers }}
           commands: |
             echo "Troubleshooting"
+            echo "Git remove"
+            git remote -v
             echo "pwd"
             pwd
             echo "ls -al"
