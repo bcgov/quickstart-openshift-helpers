@@ -97,7 +97,6 @@ jobs:
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ inputs.oc_server }}
           repository: bcgov/quickstart-openshift-helpers
-          ref: chore/crunchyWorkflow
           triggers: ${{ inputs.triggers }}
           commands: |
             echo 'Deploying crunchy helm chart'
