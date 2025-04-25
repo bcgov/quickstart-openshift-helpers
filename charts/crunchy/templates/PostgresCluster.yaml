@@ -12,7 +12,6 @@ spec:
   {{ if .Values.crunchy.postGISVersion }}
   postGISVersion: {{ .Values.crunchy.postGISVersion | quote }}
   {{ end }}
-  postgresVersion: {{ .Values.crunchy.postgresVersion }}
   {{- if and .Values.crunchy.clone .Values.crunchy.clone.enabled }} # enabled in disaster recovery scenario
   dataSource:
     {{- if .Values.crunchy.clone.s3.enabled}}
