@@ -70,7 +70,7 @@ jobs:
 
   results:
     name: Results
-    needs: [builds, csr-gen, schema-spy, validate]
+    needs: [builds, csr-gen, deploys, schema-spy, validate]
     runs-on: ubuntu-24.04
     steps:
       - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
