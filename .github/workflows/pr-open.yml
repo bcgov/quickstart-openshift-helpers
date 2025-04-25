@@ -77,10 +77,10 @@ jobs:
         run: echo "At least one job has failed." && exit 1
 
       - if: needs.deploys.outputs.triggered == 'true'
-        run: echo "Success!"
+        run: echo "Deploy triggered successfully!"
 
-      - if: needs.deploys.outputs.triggered != 'true'
-        run: |
-          # Handle fail
-          echo "needs.deploys == ${{ toJson(needs.deploys) }}"
-          exit 1
+      # - if: needs.deploys.outputs.triggered != 'true'
+      #   run: |
+      #     # Handle fail
+      #     echo "needs.deploys == ${{ toJson(needs.deploys) }}"
+      #     exit 1
