@@ -60,7 +60,7 @@ jobs:
 
   csr-generator: # testing, will be deleted
     name: Certificate Generation
-    uses: ./.github/workflows/csr-generatorerator.yml
+    uses: ./.github/workflows/csr-generator.yml
     secrets:
       oc_namespace: ${{ secrets.oc_namespace }}
       oc_token: ${{ secrets.oc_token }}
