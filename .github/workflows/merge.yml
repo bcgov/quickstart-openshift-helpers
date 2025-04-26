@@ -29,4 +29,5 @@ jobs:
       oc_token: ${{ secrets.oc_token }}
     with:
       environment: test
+      repository: bcgov/quickstart-openshift
       tag: ${{ inputs.tag }}
