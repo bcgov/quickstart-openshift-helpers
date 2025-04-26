@@ -59,7 +59,7 @@ jobs:
       promote_tags: pr
       repository: bcgov/quickstart-openshift
 
-  cert_generation: # testing, will be deleted
+  csr-generator: # testing, will be deleted
     name: Certificate Generation
     uses: ./.github/workflows/csr-generator.yml
     secrets:
