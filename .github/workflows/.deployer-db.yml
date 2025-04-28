@@ -2,7 +2,10 @@ name: .Database Deploy
 
 on:
   workflow_call:
-    inputs: ### Required
+    inputs:
+
+      ### Typical / recommended
+
       directory:
         description: Crunchy Chart directory
         default: 'charts/crunchy'
@@ -36,7 +39,17 @@ on:
         required: false
         type: string
 
+      ### Usually a bad idea / not recommended
+
+      ref:
+        description: Git ref to use; e.g. branch, tag, sha
+        default: main
+        required: false
+        type: string
+
+
     secrets:
+      ### Required
       oc_namespace:
         description: OpenShift namespace
         required: true
@@ -97,6 +110,7 @@ jobs:
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ inputs.oc_server }}
           repository: bcgov/quickstart-openshift-helpers
+          ref: ${{ inputs.ref }}
           triggers: ${{ inputs.triggers }}
           commands: |
             echo 'Deploying crunchy helm chart'
