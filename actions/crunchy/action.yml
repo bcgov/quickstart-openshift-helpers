@@ -4,7 +4,7 @@ description: 'Deploy a Crunchy PostgreSQL database to OpenShift'
 inputs:
   directory:
     description: 'Crunchy Chart directory'
-    default: 'charts/crunchy'
+    default: 'actions/crunchy/charts/crunchy'
     required: false
   oc_server:
     description: 'OpenShift server'
