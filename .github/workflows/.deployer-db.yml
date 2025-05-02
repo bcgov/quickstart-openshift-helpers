@@ -121,15 +121,20 @@ jobs:
                 --set-string crunchy.pgBackRest.s3.secretKey=${{ secrets.s3_secret_key }} \
                 --set-string crunchy.pgBackRest.s3.bucket=${{ secrets.s3_bucket }} \
                 --set-string crunchy.pgBackRest.s3.endpoint=${{ secrets.s3_endpoint }} \
-                --values ${{ inputs.values }} ${{github.event.repository.name}}  .
+                --set-string crunchy.postgresVersion="16" \
+                --set-string crunchy.postgisVersion="3.4" \
+                --values ${{ inputs.values }} ${{github.event.repository.name}}-postgres  .
             else
-              helm upgrade --install --wait --values ${{ inputs.values }} ${{github.event.repository.name}} .
+              helm upgrade --install --wait --values ${{ inputs.values }} \
+              --set-string crunchy.postgresVersion="16" \
+              --set-string crunchy.postgisVersion="3.4" \
+              ${{github.event.repository.name}}-postgres .
             fi
             # check if operator deployed the db successfully, retry 10 times with 60 seconds interval
             READY=false
             for i in {1..10}; do
               # Check if the 'db' instance has at least 1 ready replica
-              if oc get PostgresCluster/${{github.event.repository.name}}-crunchy -o json | jq -e '.status.instances[] | select(.name=="db") | .readyReplicas > 0' > /dev/null 2>&1; then
+              if oc get PostgresCluster/${{github.event.repository.name}}-postgres-crunchy -o json | jq -e '.status.instances[] | select(.name=="db") | .readyReplicas > 0' > /dev/null 2>&1; then
                 echo "Crunchy DB instance 'db' is ready "
                 READY=true
                 break
@@ -145,7 +150,7 @@ jobs:
             fi
 
       - name: Add PR specific user to Crunchy DB # only for PRs
-        if: github.event_name == 'pull_request'
+        if: (github.event_name == 'pull_request' && github.event.action != 'closed')
         uses: bcgov/action-oc-runner@v1.2.0
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
@@ -155,7 +160,7 @@ jobs:
           commands: |
             echo 'Adding PR specific user to Crunchy DB'
             NEW_USER='{"databases":["app-${{ github.event.number }}"],"name":"app-${{ github.event.number }}"}'
-            CURRENT_USERS=$(oc get PostgresCluster/${{github.event.repository.name}}-crunchy -o json | jq '.spec.users')
+            CURRENT_USERS=$(oc get PostgresCluster/${{github.event.repository.name}}-postgres-crunchy -o json | jq '.spec.users')
             echo "${CURRENT_USERS}"
 
             # check if current_users already contains the new_user
@@ -166,12 +171,12 @@ jobs:
 
             UPDATED_USERS=$(echo "${CURRENT_USERS}" | jq --argjson NEW_USER "${NEW_USER}" '. + [$NEW_USER]')
             PATCH_JSON=$(jq -n --argjson users "${UPDATED_USERS}" '{"spec": {"users": $users}}')
-            oc patch PostgresCluster/${{github.event.repository.name}}-crunchy --type=merge -p "${PATCH_JSON}"
+            oc patch PostgresCluster/${{github.event.repository.name}}-postgres-crunchy --type=merge -p "${PATCH_JSON}"
 
             # wait for sometime as it takes time to create the user, query the secret and check if it is created, otherwise wait in a loop for 5 rounds
             SECRET_FOUND=false
             for i in {1..5}; do
-              if oc get secret ${{github.event.repository.name}}-crunchy-pguser-app-${{ github.event.number }} -o jsonpath='{.metadata.name}' > /dev/null 2>&1; then
+              if oc get secret ${{github.event.repository.name}}-postgres-crunchy-pguser-app-${{ github.event.number }} -o jsonpath='{.metadata.name}' > /dev/null 2>&1; then
                 echo "Secret created"
                 SECRET_FOUND=true
                 break
@@ -182,7 +187,40 @@ jobs:
             done
 
             if [ "$SECRET_FOUND" = false ]; then
-              echo "Error: Secret ${{github.event.repository.name}}-crunchy-pguser-app-${{ github.event.number }} was not created after 5 attempts."
+              echo "Error: Secret ${{github.event.repository.name}}-postgres-crunchy-pguser-app-${{ github.event.number }} was not created after 5 attempts."
               exit 1
             fi
+      - name: Remove PR specific user from Crunchy DB # only for PRs and when PR is closed
+        if: (github.event_name == 'pull_request' && github.event.action == 'closed')
+        uses: bcgov/action-oc-runner@v1.2.0
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ vars.oc_server }}
+          triggers: ${{ inputs.triggers }}
+          commands: |
+            # check if postgres-crunchy exists or else exit
+            oc get PostgresCluster/${{github.event.repository.name}}-postgres-crunchy || exit 0
+
+            # Remove the user from the crunchy cluster yaml and apply the changes
+            USER_TO_REMOVE='{"databases":["app-${{ github.event.number }}"],"name":"app-${{ github.event.number }}"}'
+            
+            echo 'getting current users from crunchy'
+            CURRENT_USERS=$(oc get PostgresCluster/${{github.event.repository.name}}-postgres-crunchy -o json | jq '.spec.users')
+            echo "${CURRENT_USERS}"
+            
+            # Remove the user from the list, 
+            UPDATED_USERS=$(echo "${CURRENT_USERS}" | jq --argjson user "${USER_TO_REMOVE}" 'map(select(. != $user))')
+
+            PATCH_JSON=$(jq -n --argjson users "${UPDATED_USERS}" '{"spec": {"users": $users}}')
+            oc patch PostgresCluster/${{github.event.repository.name}}-postgres-crunchy --type=merge -p "${PATCH_JSON}"
+            
+            # get primary crunchy pod and remove the role and db
+            CRUNCHY_PG_PRIMARY_POD_NAME=$(oc get pods -l postgres-operator.crunchydata.com/role=master -o json | jq -r '.items[0].metadata.name')
+            
+            echo "${CRUNCHY_PG_PRIMARY_POD_NAME}"
+            # Terminate all connections to the database before trying terminate and Drop the databse and role right after
+            oc exec -it "${CRUNCHY_PG_PRIMARY_POD_NAME}" -- bash -c "psql -U postgres -d postgres -c \"SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = 'app-${{ github.event.number }}' AND pid <> pg_backend_pid();\" && \psql -U postgres -d postgres -c \"DROP DATABASE \\\"app-${{ github.event.number }}\\\";\" && \psql -U postgres -d postgres -c \"DROP ROLE \\\"app-${{ github.event.number }}\\\";\""
+            echo 'database and role deleted'
+
 
