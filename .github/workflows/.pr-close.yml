@@ -128,7 +128,7 @@ jobs:
             helm status ${{ env.release }} && helm uninstall --no-hooks ${{ env.release }} || \
               echo "Not found: ${{ env.release }}"
             # check if crunchy exists or else exit
-            CRUNCHY_RELEASE_NAME=$(echo -n "${{github.event.repository.name}}" | md5sum | cut -c 1-8)-postgres
+            CRUNCHY_RELEASE_NAME=pg-$(echo -n "${{github.event.repository.name}}" | md5sum | cut -c 1-8)
             oc get PostgresCluster/${CRUNCHY_RELEASE_NAME}-crunchy || exit 0
 
             # Remove the user from the crunchy cluster yaml and apply the changes
