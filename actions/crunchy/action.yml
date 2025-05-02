@@ -1,0 +1,160 @@
+name: 'Crunchy Database Deployment'
+description: 'Deploy a Crunchy PostgreSQL database to OpenShift'
+
+inputs:
+  directory:
+    description: 'Crunchy Chart directory'
+    default: 'charts/crunchy'
+    required: false
+  oc_server:
+    description: 'OpenShift server'
+    default: 'https://api.silver.devops.gov.bc.ca:6443'
+    required: false
+  environment:
+    description: 'Environment name; omit for PRs'
+    required: false
+  s3_enabled:
+    description: 'Enable S3 backups'
+    required: false
+    default: 'false'
+  values:
+    description: 'Values file'
+    default: 'values.yaml'
+    required: false
+  enabled:
+    description: 'Enable the deployment of the crunchy database, easy switch to turn it on/off'
+    default: 'true'
+    required: false
+  triggers:
+    description: 'Paths used to trigger a deployment; e.g. (./backend/ ./frontend/)'
+    required: false
+  ref:
+    description: 'Git ref to use; e.g. branch, tag, sha'
+    default: 'main'
+    required: false
+  oc_namespace:
+    description: 'OpenShift namespace'
+    required: true
+  oc_token:
+    description: 'OpenShift token'
+    required: true
+  s3_access_key:
+    description: 'S3 access key'
+    required: false
+  s3_secret_key:
+    description: 'S3 secret key'
+    required: false
+  s3_bucket:
+    description: 'S3 bucket'
+    required: false
+  s3_endpoint:
+    description: 'S3 endpoint'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Validate Inputs
+      if: inputs.s3_enabled == 'true'
+      shell: bash
+      run: |
+        echo "S3 is enabled for backups, checking for mandatory secrets"
+        if [ -z "${{ inputs.s3_access_key }}" ]; then
+          echo "S3 access key not found"
+          exit 1
+        fi
+        if [ -z "${{ inputs.s3_secret_key }}" ]; then
+          echo "S3 secret key not found"
+          exit 1
+        fi
+        if [ -z "${{ inputs.s3_bucket }}" ]; then
+          echo "S3 bucket not found"
+          exit 1
+        fi
+        if [ -z "${{ inputs.s3_endpoint }}" ]; then
+          echo "S3 endpoint not found"
+          exit 1
+        fi
+
+    - uses: actions/checkout@v4
+    - name: Deploy Database
+      uses: bcgov/action-oc-runner@v1.2.0
+      with:
+        oc_namespace: ${{ inputs.oc_namespace }}
+        oc_token: ${{ inputs.oc_token }}
+        oc_server: ${{ inputs.oc_server }}
+        repository: bcgov/quickstart-openshift-helpers
+        ref: ${{ inputs.ref }}
+        triggers: ${{ inputs.triggers }}
+        commands: |
+          echo 'Deploying crunchy helm chart'
+          cd ${{ inputs.directory }}
+          if [ "${{ inputs.s3_enabled }}" == "true" ]; then
+            helm upgrade --install --wait --set crunchy.pgBackRest.s3.enabled=true \
+              --set-string crunchy.pgBackRest.s3.accessKey=${{ inputs.s3_access_key }} \
+              --set-string crunchy.pgBackRest.s3.secretKey=${{ inputs.s3_secret_key }} \
+              --set-string crunchy.pgBackRest.s3.bucket=${{ inputs.s3_bucket }} \
+              --set-string crunchy.pgBackRest.s3.endpoint=${{ inputs.s3_endpoint }} \
+              --values ${{ inputs.values }} ${{ github.event.repository.name }}  .
+          else
+            helm upgrade --install --wait --values ${{ inputs.values }} ${{ github.event.repository.name }} .
+          fi
+          # check if operator deployed the db successfully, retry 10 times with 60 seconds interval
+          READY=false
+          for i in {1..10}; do
+            # Check if the 'db' instance has at least 1 ready replica
+            if oc get PostgresCluster/${{github.event.repository.name}}-crunchy -o json | jq -e '.status.instances[] | select(.name=="db") | .readyReplicas > 0' > /dev/null 2>&1; then
+              echo "Crunchy DB instance 'db' is ready "
+              READY=true
+              break
+            else
+              echo "Attempt $i: Crunchy DB is not ready, waiting for 60 seconds"
+              sleep 60
+            fi
+          done
+
+          if [ "$READY" = false ]; then
+            echo "Crunchy DB did not become ready after 10 attempts."
+            exit 1
+          fi
+
+    - name: Add PR specific user to Crunchy DB
+      if: github.event_name == 'pull_request'
+      uses: bcgov/action-oc-runner@v1.2.0
+      with:
+        oc_namespace: ${{ inputs.oc_namespace }}
+        oc_token: ${{ inputs.oc_token }}
+        oc_server: ${{ inputs.oc_server }}
+        triggers: ${{ inputs.triggers }}
+        commands: |
+          echo 'Adding PR specific user to Crunchy DB'
+          NEW_USER='{"databases":["app-${{ github.event.number }}"],"name":"app-${{ github.event.number }}"}'
+          CURRENT_USERS=$(oc get PostgresCluster/${{ github.event.repository.name }}-crunchy -o json | jq '.spec.users')
+          echo "${CURRENT_USERS}"
+
+          # check if current_users already contains the new_user
+          if echo "${CURRENT_USERS}" | jq -e ".[] | select(.name == \"app-${{ github.event.number }}\")" > /dev/null; then
+            echo "User already exists"
+            exit 0
+          fi
+
+          UPDATED_USERS=$(echo "${CURRENT_USERS}" | jq --argjson NEW_USER "${NEW_USER}" '. + [$NEW_USER]')
+          PATCH_JSON=$(jq -n --argjson users "${UPDATED_USERS}" '{"spec": {"users": $users}}')
+          oc patch PostgresCluster/${{ github.event.repository.name }}-crunchy --type=merge -p "${PATCH_JSON}"
+          # wait for sometime as it takes time to create the user, query the secret and check if it is created, otherwise wait in a loop for 5 rounds
+          SECRET_FOUND=false
+          for i in {1..5}; do
+            if oc get secret ${{github.event.repository.name}}-crunchy-pguser-app-${{ github.event.number }} -o jsonpath='{.metadata.name}' > /dev/null 2>&1; then
+              echo "Secret created"
+              SECRET_FOUND=true
+              break
+            else
+              echo "Attempt $i: Secret not created, waiting for 60 seconds"
+              sleep 60
+            fi
+          done
+
+          if [ "$SECRET_FOUND" = false ]; then
+            echo "Error: Secret ${{github.event.repository.name}}-crunchy-pguser-app-${{ github.event.number }} was not created after 5 attempts."
+            exit 1
+          fi

@@ -9,7 +9,7 @@ on:
       ### Typical / recommended
       atomic:
         description: Atomic deployment?  That means fail all or nothing
-        default: true
+        default: 'true'
         required: false
         type: string
       directory:
