@@ -4,7 +4,7 @@ description: 'Deploy a Crunchy PostgreSQL database to OpenShift'
 inputs:
   directory:
     description: 'Crunchy Chart directory'
-    default: 'charts/crunchy'
+    default: 'actions/crunchy/charts/crunchy'
     required: false
   oc_server:
     description: 'OpenShift server'
@@ -50,7 +50,13 @@ inputs:
   s3_endpoint:
     description: 'S3 endpoint'
     required: false
-
+  postgres_version:
+    description: 'Postgres version to use; e.g. 16, 15, Must check with platform team for supported versions'
+    required: true
+  postgis_version:
+    description: 'PostGIS version to use; e.g. 3.4, 3.3, 3.2'
+    required: false
+    default: ''
 runs:
   using: "composite"
   steps:
@@ -77,6 +83,13 @@ runs:
         fi
 
     - uses: actions/checkout@v4
+    - name: Release Name
+      id: release_name
+      shell: bash
+      run: |
+        RELEASE_NAME=pg-$(echo -n "${{github.event.repository.name}}" | md5sum | cut -c 1-8)
+        echo "RELEASE_NAME=${RELEASE_NAME}" >> $GITHUB_OUTPUT
+        echo "Release name: ${RELEASE_NAME}"
     - name: Deploy Database
       uses: bcgov/action-oc-runner@v1.2.0
       with:
@@ -89,21 +102,30 @@ runs:
         commands: |
           echo 'Deploying crunchy helm chart'
           cd ${{ inputs.directory }}
+          sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
+          helm package -u .
           if [ "${{ inputs.s3_enabled }}" == "true" ]; then
             helm upgrade --install --wait --set crunchy.pgBackRest.s3.enabled=true \
               --set-string crunchy.pgBackRest.s3.accessKey=${{ inputs.s3_access_key }} \
               --set-string crunchy.pgBackRest.s3.secretKey=${{ inputs.s3_secret_key }} \
               --set-string crunchy.pgBackRest.s3.bucket=${{ inputs.s3_bucket }} \
               --set-string crunchy.pgBackRest.s3.endpoint=${{ inputs.s3_endpoint }} \
-              --values ${{ inputs.values }} ${{ github.event.repository.name }}  .
+              --set-string crunchy.postgresVersion=${{ inputs.postgres_version }} \
+              --set-string crunchy.postgisVersion=${{ inputs.postgis_version }} \
+              --values ${{ inputs.values }} ${{steps.release_name.outputs.RELEASE_NAME}} \
+              ./${{ github.event.repository.name }}-5.5.1.tgz
           else
-            helm upgrade --install --wait --values ${{ inputs.values }} ${{ github.event.repository.name }} .
+            helm upgrade --install --wait --values ${{ inputs.values }} \
+            --set-string crunchy.postgresVersion=${{ inputs.postgres_version }} \
+            --set-string crunchy.postgisVersion=${{ inputs.postgis_version }} \
+            ${{steps.release_name.outputs.RELEASE_NAME}} \
+            ./${{ github.event.repository.name }}-5.5.1.tgz
           fi
           # check if operator deployed the db successfully, retry 10 times with 60 seconds interval
           READY=false
           for i in {1..10}; do
             # Check if the 'db' instance has at least 1 ready replica
-            if oc get PostgresCluster/${{github.event.repository.name}}-crunchy -o json | jq -e '.status.instances[] | select(.name=="db") | .readyReplicas > 0' > /dev/null 2>&1; then
+            if oc get PostgresCluster/${{steps.release_name.outputs.RELEASE_NAME}}-crunchy -o json | jq -e '.status.instances[] | select(.name=="db") | .readyReplicas > 0' > /dev/null 2>&1; then
               echo "Crunchy DB instance 'db' is ready "
               READY=true
               break
@@ -129,7 +151,7 @@ runs:
         commands: |
           echo 'Adding PR specific user to Crunchy DB'
           NEW_USER='{"databases":["app-${{ github.event.number }}"],"name":"app-${{ github.event.number }}"}'
-          CURRENT_USERS=$(oc get PostgresCluster/${{ github.event.repository.name }}-crunchy -o json | jq '.spec.users')
+          CURRENT_USERS=$(oc get PostgresCluster/${{steps.release_name.outputs.RELEASE_NAME}}-crunchy -o json | jq '.spec.users')
           echo "${CURRENT_USERS}"
 
           # check if current_users already contains the new_user
@@ -140,11 +162,11 @@ runs:
 
           UPDATED_USERS=$(echo "${CURRENT_USERS}" | jq --argjson NEW_USER "${NEW_USER}" '. + [$NEW_USER]')
           PATCH_JSON=$(jq -n --argjson users "${UPDATED_USERS}" '{"spec": {"users": $users}}')
-          oc patch PostgresCluster/${{ github.event.repository.name }}-crunchy --type=merge -p "${PATCH_JSON}"
+          oc patch PostgresCluster/${{steps.release_name.outputs.RELEASE_NAME}}-crunchy --type=merge -p "${PATCH_JSON}"
           # wait for sometime as it takes time to create the user, query the secret and check if it is created, otherwise wait in a loop for 5 rounds
           SECRET_FOUND=false
           for i in {1..5}; do
-            if oc get secret ${{github.event.repository.name}}-crunchy-pguser-app-${{ github.event.number }} -o jsonpath='{.metadata.name}' > /dev/null 2>&1; then
+            if oc get secret ${{steps.release_name.outputs.RELEASE_NAME}}-crunchy-pguser-app-${{ github.event.number }} -o jsonpath='{.metadata.name}' > /dev/null 2>&1; then
               echo "Secret created"
               SECRET_FOUND=true
               break
@@ -155,6 +177,6 @@ runs:
           done
 
           if [ "$SECRET_FOUND" = false ]; then
-            echo "Error: Secret ${{github.event.repository.name}}-crunchy-pguser-app-${{ github.event.number }} was not created after 5 attempts."
+            echo "Error: Secret ${{steps.release_name.outputs.RELEASE_NAME}}-crunchy-pguser-app-${{ github.event.number }} was not created after 5 attempts."
             exit 1
           fi
