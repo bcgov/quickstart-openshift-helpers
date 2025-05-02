@@ -30,7 +30,7 @@ inputs:
     required: false
   ref:
     description: 'Git ref to use; e.g. branch, tag, sha'
-    default: 'main'
+    default: ''
     required: false
   oc_namespace:
     description: 'OpenShift namespace'
