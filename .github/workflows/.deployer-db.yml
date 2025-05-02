@@ -8,7 +8,7 @@ on:
 
       directory:
         description: Crunchy Chart directory
-        default: 'charts/crunchy'
+        default: 'actions/crunchy/charts/crunchy'
         required: false
         type: string
       oc_server:
