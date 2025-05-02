@@ -135,7 +135,7 @@ jobs:
             USER_TO_REMOVE='{"databases":["app-${{ github.event.number }}"],"name":"app-${{ github.event.number }}"}'
             
             echo 'getting current users from crunchy'
-            CURRENT_USERS=$(oc get PostgresCluster/${CRUNCHY_RELEASE_NAME}-postgres-crunchy -o json | jq '.spec.users')
+            CURRENT_USERS=$(oc get PostgresCluster/${CRUNCHY_RELEASE_NAME}-crunchy -o json | jq '.spec.users')
             echo "${CURRENT_USERS}"
             
             # Remove the user from the list, 
