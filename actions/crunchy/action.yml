@@ -95,10 +95,21 @@ runs:
               --set-string crunchy.pgBackRest.s3.secretKey=${{ inputs.s3_secret_key }} \
               --set-string crunchy.pgBackRest.s3.bucket=${{ inputs.s3_bucket }} \
               --set-string crunchy.pgBackRest.s3.endpoint=${{ inputs.s3_endpoint }} \
-              --values ${{ inputs.values }} postgres  .
+              --values ${{ inputs.values }} ${{ github.event.repository.name }}  .
           else
-            helm upgrade --install --wait --values ${{ inputs.values }} postgres .
+            helm upgrade --install --wait --values ${{ inputs.values }} ${{ github.event.repository.name }} .
           fi
+          # check if operator deployed the db successfully, retry 10 times with 30 seconds interval
+          for i in {1..10}; do
+            # Check if the 'db' instance has exactly 1 ready replica
+            if oc get PostgresCluster/${{github.event.repository.name}}-crunchy -o json | jq -e '.status.instances[] | select(.name=="db") | .readyReplicas > 0' > /dev/null 2>&1; then
+              echo "Crunchy DB instance 'db' is ready "
+              break
+            else
+              echo "Crunchy DB is not ready, waiting for 30 seconds"
+              sleep 30
+            fi
+          done
 
     - name: Add PR specific user to Crunchy DB
       if: github.event_name == 'pull_request'
@@ -111,7 +122,7 @@ runs:
         commands: |
           echo 'Adding PR specific user to Crunchy DB'
           NEW_USER='{"databases":["app-${{ github.event.number }}"],"name":"app-${{ github.event.number }}"}'
-          CURRENT_USERS=$(oc get PostgresCluster/postgres-crunchy -o json | jq '.spec.users')
+          CURRENT_USERS=$(oc get PostgresCluster/${{ github.event.repository.name }}-crunchy -o json | jq '.spec.users')
           echo "${CURRENT_USERS}"
 
           # check if current_users already contains the new_user
@@ -122,11 +133,11 @@ runs:
 
           UPDATED_USERS=$(echo "${CURRENT_USERS}" | jq --argjson NEW_USER "${NEW_USER}" '. + [$NEW_USER]')
           PATCH_JSON=$(jq -n --argjson users "${UPDATED_USERS}" '{"spec": {"users": $users}}')
-          oc patch PostgresCluster/postgres-crunchy --type=merge -p "${PATCH_JSON}"
+          oc patch PostgresCluster/${{ github.event.repository.name }}-crunchy --type=merge -p "${PATCH_JSON}"
 
           # wait for sometime as it takes time to create the user, query the secret and check if it is created, otherwise wait in a loop for 5 rounds
           for i in $(seq 1 5); do
-          if oc get secret postgres-crunchy-pguser-app-${{ github.event.number }} -o jsonpath='{.metadata.name}' > /dev/null; then
+          if oc get secret ${{ github.event.repository.name }}-crunchy-pguser-app-${{ github.event.number }} -o jsonpath='{.metadata.name}' > /dev/null; then
               echo "Secret created"
               break
           else
