@@ -76,6 +76,7 @@ runs:
           exit 1
         fi
 
+    - uses: actions/checkout@v4
     - name: Deploy Database
       uses: bcgov/action-oc-runner@v1.2.0
       with:
