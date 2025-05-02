@@ -102,6 +102,8 @@ runs:
         commands: |
           echo 'Deploying crunchy helm chart'
           cd ${{ inputs.directory }}
+          sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
+          helm package -u .
           if [ "${{ inputs.s3_enabled }}" == "true" ]; then
             helm upgrade --install --wait --set crunchy.pgBackRest.s3.enabled=true \
               --set-string crunchy.pgBackRest.s3.accessKey=${{ inputs.s3_access_key }} \
@@ -110,12 +112,14 @@ runs:
               --set-string crunchy.pgBackRest.s3.endpoint=${{ inputs.s3_endpoint }} \
               --set-string crunchy.postgresVersion=${{ inputs.postgres_version }} \
               --set-string crunchy.postgisVersion=${{ inputs.postgis_version }} \
-              --values ${{ inputs.values }} ${{steps.release_name.outputs.RELEASE_NAME}}  .
+              --values ${{ inputs.values }} ${{steps.release_name.outputs.RELEASE_NAME}} \
+              ./${{ github.event.repository.name }}-5.5.1.tgz
           else
             helm upgrade --install --wait --values ${{ inputs.values }} \
             --set-string crunchy.postgresVersion=${{ inputs.postgres_version }} \
             --set-string crunchy.postgisVersion=${{ inputs.postgis_version }} \
-            ${{steps.release_name.outputs.RELEASE_NAME}}  .
+            ${{steps.release_name.outputs.RELEASE_NAME}} \
+            ./${{ github.event.repository.name }}-5.5.1.tgz
           fi
           # check if operator deployed the db successfully, retry 10 times with 60 seconds interval
           READY=false
