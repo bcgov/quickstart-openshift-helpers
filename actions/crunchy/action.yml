@@ -29,8 +29,7 @@ inputs:
     description: 'Paths used to trigger a deployment; e.g. (./backend/ ./frontend/)'
     required: false
   ref:
-    description: 'Git ref to use; e.g. branch, tag, sha'
-    default: ''
+    description: 'Git ref to use, omit for downstream branch; e.g. branch, tag, sha'
     required: false
   oc_namespace:
     description: 'OpenShift namespace'
