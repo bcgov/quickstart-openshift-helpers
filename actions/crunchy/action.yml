@@ -99,17 +99,24 @@ runs:
           else
             helm upgrade --install --wait --values ${{ inputs.values }} ${{ github.event.repository.name }} .
           fi
-          # check if operator deployed the db successfully, retry 10 times with 30 seconds interval
+          # check if operator deployed the db successfully, retry 10 times with 60 seconds interval
+          READY=false
           for i in {1..10}; do
-            # Check if the 'db' instance has exactly 1 ready replica
+            # Check if the 'db' instance has at least 1 ready replica
             if oc get PostgresCluster/${{github.event.repository.name}}-crunchy -o json | jq -e '.status.instances[] | select(.name=="db") | .readyReplicas > 0' > /dev/null 2>&1; then
               echo "Crunchy DB instance 'db' is ready "
+              READY=true
               break
             else
-              echo "Crunchy DB is not ready, waiting for 30 seconds"
-              sleep 30
+              echo "Attempt $i: Crunchy DB is not ready, waiting for 60 seconds"
+              sleep 60
             fi
           done
+
+          if [ "$READY" = false ]; then
+            echo "Crunchy DB did not become ready after 10 attempts."
+            exit 1
+          fi
 
     - name: Add PR specific user to Crunchy DB
       if: github.event_name == 'pull_request'
@@ -134,14 +141,20 @@ runs:
           UPDATED_USERS=$(echo "${CURRENT_USERS}" | jq --argjson NEW_USER "${NEW_USER}" '. + [$NEW_USER]')
           PATCH_JSON=$(jq -n --argjson users "${UPDATED_USERS}" '{"spec": {"users": $users}}')
           oc patch PostgresCluster/${{ github.event.repository.name }}-crunchy --type=merge -p "${PATCH_JSON}"
-
           # wait for sometime as it takes time to create the user, query the secret and check if it is created, otherwise wait in a loop for 5 rounds
-          for i in $(seq 1 5); do
-          if oc get secret ${{ github.event.repository.name }}-crunchy-pguser-app-${{ github.event.number }} -o jsonpath='{.metadata.name}' > /dev/null; then
+          SECRET_FOUND=false
+          for i in {1..5}; do
+            if oc get secret ${{github.event.repository.name}}-crunchy-pguser-app-${{ github.event.number }} -o jsonpath='{.metadata.name}' > /dev/null 2>&1; then
               echo "Secret created"
+              SECRET_FOUND=true
               break
-          else
-              echo "Secret not created, waiting for 60 seconds"
+            else
+              echo "Attempt $i: Secret not created, waiting for 60 seconds"
               sleep 60
-          fi
+            fi
           done
+
+          if [ "$SECRET_FOUND" = false ]; then
+            echo "Error: Secret ${{github.event.repository.name}}-crunchy-pguser-app-${{ github.event.number }} was not created after 5 attempts."
+            exit 1
+          fi
