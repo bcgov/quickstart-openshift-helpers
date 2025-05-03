@@ -52,14 +52,10 @@ Here's a breakdown of the main phases:
     }
 }%%
 graph TD
-        subgraph "Workflow Trigger (e.g., Push, PR)"
-                A[Start]
-        end
-
         subgraph "Deployment Phase"
-                style DeploymentPhase fill:#e6f7ff,stroke:#91d5ff,stroke-width:2px
+                A[Start]
                 B(Generate Release Name);
-                C(Deploy Database using Helm);
+                C(Deploy Database usingHelm);
                 D{Wait for Primary DB Ready};
                 E{Is this a PR Trigger?};
                 F(Add PR Specific User/DB);
@@ -75,8 +71,7 @@ graph TD
                 E -- No --> H;
         end
 
-        subgraph "Cleanup Phase (Separate Job - e.g., on PR Close)"
-                style CleanupPhase fill:#fff0f6,stroke:#ffadd2,stroke-width:2px
+        subgraph "Cleanup Phase (PR Close)"
                 I[Start Cleanup];
                 J(Identify PostgresCluster);
                 K(Patch PostgresCluster - Remove PR User);
