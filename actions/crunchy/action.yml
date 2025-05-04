@@ -18,8 +18,8 @@ inputs:
     required: false
     default: 'false'
   values:
-    description: 'Values file'
-    default: 'values.yaml'
+    description: 'YAML content for values. If not provided, the default values.yaml in the chart directory will be used'
+    default: ''
     required: false
   enabled:
     description: 'Enable the deployment of the crunchy database, easy switch to turn it on/off'
@@ -103,6 +103,19 @@ runs:
           echo 'Deploying crunchy helm chart'
           cd ${{ inputs.directory }}
           sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
+
+          # Handle values logic
+          if [ -z "${{ inputs.values }}" ]; then
+            # Use default values file in the chart directory
+            VALUES_FILE="values.yaml"
+            echo "Using default values file: ${VALUES_FILE}"
+          else
+            # Create a temporary file with the provided YAML content - not accepting file paths
+            VALUES_FILE="temp_values.yaml"
+            echo "Creating temporary values file from provided YAML content"
+            echo "${{ inputs.values }}" > ${VALUES_FILE}
+          fi
+
           helm package -u .
           if [ "${{ inputs.s3_enabled }}" == "true" ]; then
             helm upgrade --install --wait --set crunchy.pgBackRest.s3.enabled=true \
@@ -112,10 +125,10 @@ runs:
               --set-string crunchy.pgBackRest.s3.endpoint=${{ inputs.s3_endpoint }} \
               --set-string crunchy.postgresVersion=${{ inputs.postgres_version }} \
               --set-string crunchy.postgisVersion=${{ inputs.postgis_version }} \
-              --values ${{ inputs.values }} ${{steps.release_name.outputs.RELEASE_NAME}} \
+              --values ${VALUES_FILE} ${{steps.release_name.outputs.RELEASE_NAME}} \
               ./${{ github.event.repository.name }}-5.5.1.tgz
           else
-            helm upgrade --install --wait --values ${{ inputs.values }} \
+            helm upgrade --install --wait --values ${VALUES_FILE} \
             --set-string crunchy.postgresVersion=${{ inputs.postgres_version }} \
             --set-string crunchy.postgisVersion=${{ inputs.postgis_version }} \
             ${{steps.release_name.outputs.RELEASE_NAME}} \
