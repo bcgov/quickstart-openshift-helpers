@@ -55,6 +55,7 @@ jobs:
       oc_token: ${{ secrets.oc_token }}
     with:
       atomic: false
+      crunchy: true
       promote_images: backend frontend migrations
       promote_tags: pr
       repository: bcgov/quickstart-openshift
