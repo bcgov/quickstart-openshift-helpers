@@ -12,6 +12,11 @@ on:
         default: 'true'
         required: false
         type: string
+      crunchy:
+        description: Install Crunchy?
+        default: 'false'
+        required: false
+        type: string
       directory:
         description: Chart directory
         default:  'charts/app'
@@ -85,6 +90,7 @@ permissions: {}
 jobs:
   deployer-db:
     name: Database
+    if: inputs.crunchy == 'true'
     uses: ./.github/workflows/.deployer-db.yml
     secrets:
       oc_namespace: ${{ secrets.OC_NAMESPACE }}
