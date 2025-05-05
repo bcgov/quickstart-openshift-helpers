@@ -103,3 +103,13 @@ graph TD
         class B,C,F,J,K,L,M,N,O action;
         class D,G wait;
 ```
+
+## Crunchy Database Deployment Workflow via GitHub Actions - Overview
+
+### Using Your Own Values File
+
+The recommended approach is to maintain your database configuration in a values.yaml file within your repository. This allows you to version control your database settings and makes changes more transparent.
+
+#### Basic Example
+
+Create a file in your repository (e.g., `./db/values.yaml`) with your custom PostgreSQL configuration:

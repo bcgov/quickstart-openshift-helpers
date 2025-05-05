@@ -18,7 +18,7 @@ inputs:
     required: false
     default: 'false'
   values:
-    description: 'YAML content for values. If not provided, the default values.yaml in the chart directory will be used'
+    description: 'Path to values.yaml file in your repository. If not provided, the default values.yaml in the chart directory will be used'
     default: ''
     required: false
   enabled:
@@ -105,15 +105,17 @@ runs:
           sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
 
           # Handle values logic
-          if [ -z "${{ inputs.values }}" ]; then
+          if [ -z "${{ inputs.values }}" ] || [ ! -f "$GITHUB_WORKSPACE/${{ inputs.values }}" ]; then
             # Use default values file in the chart directory
             VALUES_FILE="values.yaml"
-            echo "Using default values file: ${VALUES_FILE}"
+            echo "Using default values file from chart directory: ${VALUES_FILE}"
+            if [ ! -z "${{ inputs.values }}" ] && [ ! -f "$GITHUB_WORKSPACE/${{ inputs.values }}" ]; then
+              echo "Warning: Specified values file '${{ inputs.values }}' not found, falling back to default values"
+            fi
           else
-            # Create a temporary file with the provided YAML content - not accepting file paths
-            VALUES_FILE="temp_values.yaml"
-            echo "Creating temporary values file from provided YAML content"
-            echo "${{ inputs.values }}" > ${VALUES_FILE}
+            # Use the values file from the repository
+            VALUES_FILE="$GITHUB_WORKSPACE/${{ inputs.values }}"
+            echo "Using values file from repository: ${VALUES_FILE}"
           fi
 
           helm package -u .
