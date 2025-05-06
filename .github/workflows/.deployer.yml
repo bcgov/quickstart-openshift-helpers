@@ -160,6 +160,7 @@ jobs:
                 helm uninstall ${{ steps.vars.outputs.release }}
             fi
 
+      - uses: actions/checkout@v4
       - name: Deploy Crunchy Helm chart
         id: deploy
         uses: ./actions/crunchy/action.yml
