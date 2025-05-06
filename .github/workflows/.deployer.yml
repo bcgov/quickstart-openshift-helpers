@@ -160,24 +160,6 @@ jobs:
                 helm uninstall ${{ steps.vars.outputs.release }}
             fi
 
-      - uses: actions/checkout@v4
-      - name: Deploy Crunchy Helm chart
-        id: deploy
-        uses: ./actions/crunchy/action.yml
-        with:
-          environment: ${{ inputs.environment }}
-          tag: ${{ steps.vars.outputs.tag }}
-          release: ${{ steps.vars.outputs.release }}
-          params: ${{ inputs.params }}
-
-      - name: Test custom values.yml
-        run: |
-          echo "Testing custom values.yml file..."
-          cat ${{ inputs.values }}
-          echo "Custom values.yml file passed successfully!"
-
-          uses: actions/crunchy/action.yml
-
       # - name: Deploy Helm chart
       #   id: deploy
       #   uses: bcgov/action-oc-runner@v1.0.0
