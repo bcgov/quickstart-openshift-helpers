@@ -55,7 +55,7 @@ jobs:
       oc_token: ${{ secrets.oc_token }}
     with:
       atomic: false
-      crunchy_values_file: crunchydb/values.yaml
+      crunchy_values_file: crunchy/values.yaml
       promote_images: backend frontend migrations
       promote_tags: pr
       repository: bcgov/quickstart-openshift
