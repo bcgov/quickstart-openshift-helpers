@@ -54,19 +54,23 @@ on:
       crunchy_values_file:
         description: 'Path to the values.yml file to use for the deployment'
         required: false
-        validation: "^.+\\.(yml|yaml)$"
+        type: string
       s3_access_key:
         description: 'S3 access key'
         required: false
+        type: string
       s3_secret_key:
         description: 'S3 secret key'
         required: false
+        type: string
       s3_bucket:
         description: 'S3 bucket'
         required: false
+        type: string
       s3_endpoint:
         description: 'S3 endpoint'
-          required: false
+        required: false
+        type: string
 
       ### Usually a bad idea / not recommended
       repository:
