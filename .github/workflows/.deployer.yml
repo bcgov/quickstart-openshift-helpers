@@ -117,7 +117,6 @@ jobs:
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ inputs.oc_server }}
           environment: ${{ inputs.environment }}
-          repository: ${{ inputs.repository }}
           s3_access_key: ${{ secrets.s3_access_key }}
           s3_secret_key: ${{ secrets.s3_secret_key }}
           s3_bucket: ${{ secrets.s3_bucket }}
