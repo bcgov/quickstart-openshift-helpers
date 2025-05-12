@@ -3,8 +3,8 @@ global:
     dbName: app #test
 crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single postgres
   enabled: true
-  postgresVersion: ~
-  postGISVersion: ~
+  postgresVersion: 16
+  postGISVersion: 3.4
   imagePullPolicy: IfNotPresent
   # enable below to start a new crunchy cluster after disaster from a backed-up location, crunchy will choose the best place to recover from.
   # follow https://access.crunchydata.com/documentation/postgres-operator/5.2.0/tutorial/disaster-recovery/
@@ -31,7 +31,7 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
         prometheus.io/scrape: 'true'
         prometheus.io/port: '9187'
     dataVolumeClaimSpec:
-      storage: 200Mi
+      storage: 210Mi
       storageClassName: netapp-block-standard
       walStorage: 255Mi
 
@@ -46,7 +46,7 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
   pgBackRest:
     enabled: true
     backupPath: /backups/test/cluster/version # change it for PROD, create values-prod.yaml
-    clusterCounter: 1 # this is the number to identify what is the current counter for the cluster, each time it is cloned it should be incremented.
+    clusterCounter: 2 # this is the number to identify what is the current counter for the cluster, each time it is cloned it should be incremented.
     # If retention-full-type set to 'count' then the oldest backups will expire when the number of backups reach the number defined in retention
     # If retention-full-type set to 'time' then the number defined in retention will take that many days worth of full backups before expiration
     retentionFullType: count
@@ -57,8 +57,8 @@ crunchy: # enable it for TEST and PROD, for PR based pipelines simply use single
       endpoint: ~
       accessKey: ~
       secretKey: ~
-      fullBackupSchedule: ~ # make sure to provide values here, if s3 is enabled.
-      incrementalBackupSchedule: ~ # make sure to provide values here, if s3 is enabled.
+      fullBackupSchedule: 0 9 * * *
+      incrementalBackupSchedule: 0 0/5 * * * # every 5 hour incremental
     pvc:
       retention: 1 # one day hot active backup in pvc
       retentionFullType: count
