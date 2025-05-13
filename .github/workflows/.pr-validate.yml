@@ -19,9 +19,13 @@ on:
         required: false
         type: string
 
+permissions: {}
+
 jobs:
   checks:
     name: Checks
+    permissions:
+      pull-requests: write
     runs-on: ubuntu-24.04
     steps:
       # Conventional commits
