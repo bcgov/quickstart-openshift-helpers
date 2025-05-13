@@ -36,7 +36,7 @@ jobs:
           environment: test
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
-          values_file: charts/crunchy/values.yml
+          values_file: crunchy/values.yml
 
   deploy-test:
     name: Deploy (test)
