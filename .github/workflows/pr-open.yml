@@ -13,6 +13,8 @@ permissions: {}
 jobs:
   schema-spy:
     name: Schema Spy
+    permissions:
+      contents: write
     uses: ./.github/workflows/.schema-spy.yml
         
   validate:
