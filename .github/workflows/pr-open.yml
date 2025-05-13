@@ -8,19 +8,18 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.number }}
   cancel-in-progress: true
 
-permissions: {}
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
 
 jobs:
   schema-spy:
     name: Schema Spy
-    permissions:
-      contents: write
     uses: ./.github/workflows/.schema-spy.yml
         
   validate:
     name: Validate
-    permissions:
-      pull-requests: write
     uses: ./.github/workflows/.pr-validate.yml
     with:
       markdown_links: |
@@ -29,8 +28,6 @@ jobs:
 
   builds:
     name: Fake Builds (retags)
-    permissions:
-      packages: write
     runs-on: ubuntu-24.04
     strategy:
       matrix:
@@ -73,8 +70,6 @@ jobs:
   deploys:
     name: Deploys
     needs: [builds, deploy-db]
-    permissions:
-      packages: write
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.oc_namespace }}
