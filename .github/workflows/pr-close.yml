@@ -9,9 +9,13 @@ concurrency:
   group: pr-${{ github.workflow }}-${{ github.event.number }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
   cleanup:
     name: Cleanup
+    permissions:
+      packages: write
     uses: ./.github/workflows/.pr-close.yml
     secrets: inherit
     with:
