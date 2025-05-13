@@ -66,6 +66,8 @@ on:
         description: 'OpenShift token'
         required: false
 
+permissions: {}
+
 jobs:
   vars:
     if: inputs.packages != ''
