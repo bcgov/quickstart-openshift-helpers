@@ -8,6 +8,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.number }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
   schema-spy:
     name: Schema Spy
@@ -15,6 +17,8 @@ jobs:
         
   validate:
     name: Validate
+    permissions:
+      pull-requests: write
     uses: ./.github/workflows/.pr-validate.yml
     with:
       markdown_links: |
@@ -23,6 +27,8 @@ jobs:
 
   builds:
     name: Fake Builds (retags)
+    permissions:
+      packages: write
     runs-on: ubuntu-24.04
     strategy:
       matrix:
