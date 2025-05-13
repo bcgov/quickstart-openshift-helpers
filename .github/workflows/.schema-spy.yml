@@ -25,9 +25,13 @@ on:
         required: false
         type: string
 
+permissions: {}
+
 jobs:
   schemaspy:
     name: Generate Documentation
+    permissions:
+      contents: write
     runs-on: ubuntu-24.04
     services:
       postgres:
