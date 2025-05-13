@@ -30,7 +30,7 @@ jobs:
     steps:
       # Conventional commits
       - name: Conventional Commits
-        uses: amannn/action-semantic-pull-request@v5.5.3
+        uses: amannn/action-semantic-pull-request@0723387faaf9b38adef4775cd42cfd5155ed6017 # v5.5.3
         if: inputs.conventional_commits != 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -43,7 +43,7 @@ jobs:
       # Add PR Description, doesn't work with forks
       - name: PR Description
         if: inputs.reject_forks != 'true' && inputs.markdown_links != ''
-        uses: bcgov/action-pr-description-add@v2.0.0
+        uses: bcgov/action-pr-description-add@14338bfe0278ead273b3c1189e5aa286ff6709c4 # v2.0.0
         env:
           DOMAIN: apps.silver.devops.gov.bc.ca
           PREFIX: ${{ github.event.repository.name }}
