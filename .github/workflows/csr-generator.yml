@@ -23,6 +23,7 @@ on:
         description: 'OpenShift server'
         required: true
         type: string
+
   workflow_dispatch:
     inputs:
       domain:
@@ -46,6 +47,9 @@ on:
         description: 'OpenShift server'
         required: true
         type: string
+
+permissions: {}
+
 jobs:
   generate-csr:
     runs-on: ubuntu-latest
@@ -106,10 +110,6 @@ jobs:
           else
           echo "KEY_GENERATED=false" >> $GITHUB_ENV
           fi
-
-
-
-
       
       - name: Create or update CSR secret in OpenShift
         uses: bcgov/action-oc-runner@v1.2.0

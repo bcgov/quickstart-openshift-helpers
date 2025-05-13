@@ -20,6 +20,9 @@ concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
 
+permissions:
+  packages: write
+
 jobs:
   deploy-db:
     name: Stack
@@ -40,6 +43,8 @@ jobs:
 
   deploy-test:
     name: Deploy (test)
+    permissions:
+      packages: write
     uses: ./.github/workflows/.deployer.yml
     secrets:
       oc_namespace: ${{ secrets.oc_namespace }}
