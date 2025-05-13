@@ -21,6 +21,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  deploy-db:
+    name: Stack
+    environment: ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ inputs.tag || steps.pr.outputs.pr }}
+      triggered: ${{ steps.deploy.outputs.triggered }}
+    steps:
+      - uses: bcgov/action-crunchy@v1.1.0
+        name: Deploy Crunchy
+        id: deploy_crunchy
+        with:
+          environment: test
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          values_file: charts/crunchy/values.yml
+
   deploy-test:
     name: Deploy (test)
     uses: ./.github/workflows/.deployer.yml
