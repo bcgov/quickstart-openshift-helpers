@@ -8,14 +8,15 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.number }}
   cancel-in-progress: true
 
-permissions: write-all
-  # contents: write
-  # pull-requests: write
-  # packages: write
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
 
 jobs:
   schema-spy:
     name: Schema Spy
+    permissions: write-all
     uses: ./.github/workflows/.schema-spy.yml
         
   validate:
