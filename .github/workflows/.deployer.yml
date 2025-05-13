@@ -49,28 +49,6 @@ on:
         description: Paths used to trigger a deployment; e.g. ('./backend/' './frontend/)
         required: false
         type: string
-      
-      ### Crunchy
-      crunchy_values_file:
-        description: 'Path to the values.yml file to use for the deployment'
-        required: false
-        type: string
-      s3_access_key:
-        description: 'S3 access key'
-        required: false
-        type: string
-      s3_secret_key:
-        description: 'S3 secret key'
-        required: false
-        type: string
-      s3_bucket:
-        description: 'S3 bucket'
-        required: false
-        type: string
-      s3_endpoint:
-        description: 'S3 endpoint'
-        required: false
-        type: string
 
       ### Usually a bad idea / not recommended
       repository:
@@ -105,37 +83,8 @@ on:
 permissions: {}
 
 jobs:
-  deployer-db:
-    name: Database
-    if: inputs.crunchy_values_file
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Deploy Crunchy
-        uses: bcgov/action-crunchy@v1.1.0
-        with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ inputs.oc_server }}
-          environment: ${{ inputs.environment }}
-          s3_access_key: ${{ secrets.s3_access_key }}
-          s3_secret_key: ${{ secrets.s3_secret_key }}
-          s3_bucket: ${{ secrets.s3_bucket }}
-          s3_endpoint: ${{ secrets.s3_endpoint }}
-          triggers: ${{ inputs.triggers }}
-          values_file: ${{ inputs.crunchy_values_file }}
-
-  # deployer-db:
-  #   name: Database
-  #   if: inputs.crunchy == 'true'
-  #   uses: ./.github/workflows/.deployer-db.yml
-  #   secrets:
-  #   with:
-  #     environment: ${{ inputs.environment }}
-  #     triggers: ${{ inputs.triggers }}
-
   deploy:
     name: Helm
-    needs: deployer-db
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     outputs:
