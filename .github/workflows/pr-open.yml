@@ -16,7 +16,11 @@ permissions:
 jobs:
   schema-spy:
     name: Schema Spy
-    permissions: write-all
+    permissions: #write-all
+      packages: write
+      contents: write
+      pull-requests: write
+      pages: write
     uses: ./.github/workflows/.schema-spy.yml
         
   validate:
