@@ -30,11 +30,11 @@ NEW_DEPLOYMENT="${2}"
 DUMP_PARAMETERS="${DUMP_PARAMETERS:---exclude-schema=tiger --exclude-schema=tiger_data --exclude-schema=topology}"
 
 # Fail fast if pods aren't found
-if ! oc get po -l deployment="${OLD_DEPLOYMENT}" | grep -q '^'; then
+if ! oc get po -l deployment="${OLD_DEPLOYMENT}" | grep -q .; then
   echo "No pods found for deployment '${OLD_DEPLOYMENT}'."
   exit 2
 fi
-if ! oc get po -l deployment="${NEW_DEPLOYMENT}" | grep -q '^'; then
+if ! oc get po -l deployment="${NEW_DEPLOYMENT}" | grep -q .; then
   echo "No pods found for deployment '${NEW_DEPLOYMENT}'."
   exit 2
 fi
