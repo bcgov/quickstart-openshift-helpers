@@ -66,8 +66,6 @@ on:
 
 permissions: {}
 
-env:
-  DEFAULT_OC_SERVER: https://api.silver.devops.gov.bc.ca:6443
 
 jobs:
   vars:
@@ -87,6 +85,14 @@ jobs:
           echo "github.event.pull_request.merged=${{ github.event.pull_request.merged }}"
           echo "github.event.pull_request.base.ref=${{ github.event.pull_request.base.ref }}"
           echo "inputs.merge_branch=${{ inputs.merge_branch }}"
+      
+      - name: Load credentials for ${{ inputs.environment }}
+        id: credentialss
+        run: |
+          # Dynamically fetch secrets using GitHub Actions syntax
+          echo "OC_NAMESPACE=${{ secrets.OC_NAMESPACE }}" >> $GITHUB_ENV
+          echo "OC_TOKEN=${{ secrets.OC_TOKEN }}" >> $GITHUB_ENV
+          echo "OC_SERVER=${{ secrets.OC_SERVER || https://api.silver.devops.gov.bc.ca:6443 }}" >> $GITHUB_ENV
 
   retags:
     name: Retags
@@ -121,9 +127,9 @@ jobs:
         if: inputs.cleanup == 'helm'
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd # v1.2.3
         with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ secrets.oc_server || env.DEFAULT_OC_SERVER }}
+          oc_namespace: ${{ env.OC_NAMESPACE }}
+          oc_token: ${{ env.OC_TOKEN }}
+          oc_server: ${{ env.OC_SERVER }}
           commands: |
             # Cleanup for Helm deployments
 
@@ -159,9 +165,9 @@ jobs:
         if: inputs.cleanup == 'label'
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd # v1.2.3
         with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ secrets.oc_server || env.DEFAULT_OC_SERVER }}
+          oc_namespace: ${{ env.OC_NAMESPACE }}
+          oc_token: ${{ env.OC_TOKEN }}
+          oc_server: ${{ env.OC_SERVER }}
           commands: |
             # Cleanup for OpenShift template deployments, uses labels
 
@@ -172,9 +178,9 @@ jobs:
         if: inputs.remove_pvc
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd # v1.2.3
         with:
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ secrets.oc_server || env.DEFAULT_OC_SERVER }}
+          oc_namespace: ${{ env.OC_NAMESPACE }}
+          oc_token: ${{ env.OC_TOKEN }}
+          oc_server: ${{ env.OC_SERVER }}
           commands: |
             # Remove PVCs from OpenShift when PR closed
             echo "${{ inputs.remove_pvc }}" | while IFS= read -r pvc; do
