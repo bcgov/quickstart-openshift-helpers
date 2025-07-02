@@ -25,7 +25,7 @@ jobs:
       oc_server: ${{ secrets.OC_SERVER }}   # REMOVED - OPTIONAL!
 ```
 
-# oc_scripts
+# ./oc_scripts
 
 `rename_deployment.sh` - rename a deployment (metadata, labels)
 `db_transfer.sh` - stream pg_dump from one container to pg_restore in another
