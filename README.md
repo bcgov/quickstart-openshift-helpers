@@ -1,5 +1,4 @@
 [![Merge](https://github.com/bcgov/quickstart-openshift-helpers/actions/workflows/merge.yml/badge.svg)](https://github.com/bcgov/quickstart-openshift-helpers/actions/workflows/merge.yml)
-[![PR Closed](https://github.com/bcgov/quickstart-openshift-helpers/actions/workflows/pr-close.yml/badge.svg)](https://github.com/bcgov/quickstart-openshift-helpers/actions/workflows/pr-close.yml)
 
 # QuickStart OpenShift - Helpers
 Workflows and any other common code used by bcgov/quickstart-openshift (template).
@@ -25,3 +24,8 @@ jobs:
       packages: backend client migrations
       oc_server: ${{ secrets.OC_SERVER }}   # REMOVED - OPTIONAL!
 ```
+
+# oc_scripts
+
+rename_deployment.sh - rename a deployment (metadata, labels)
+db_transfer.sh - stream pg_dump from one container to pg_restore in another
