@@ -87,7 +87,7 @@ jobs:
           echo "inputs.merge_branch=${{ inputs.merge_branch }}"
       
       - name: Load credentials for ${{ inputs.environment }}
-        id: credentialss
+        id: credentials
         run: |
           # Dynamically fetch secrets using GitHub Actions syntax
           echo "OC_NAMESPACE=${{ secrets.OC_NAMESPACE }}" >> $GITHUB_ENV
