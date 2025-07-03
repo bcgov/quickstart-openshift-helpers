@@ -25,7 +25,8 @@ on:
         required: false
         type: string
 
-permissions: {}
+permissions:
+  pages: write
 
 jobs:
   schemaspy:
