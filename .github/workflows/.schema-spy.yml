@@ -25,6 +25,8 @@ on:
         required: false
         type: string
 
+permissions: {}
+
 jobs:
   schemaspy:
     name: Generate Documentation
