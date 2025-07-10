@@ -112,7 +112,6 @@ jobs:
           values_file: charts/crunchy/values.yml
           triggers: ${{ inputs.db_triggers }}
 
-
       # Variables
       - if: inputs.tag  == ''
         id: pr
