@@ -84,7 +84,6 @@ jobs:
       atomic: false
       promote_images: backend frontend migrations
       promote_tags: pr
-      repository: bcgov/quickstart-openshift
 
   cleanup:
     name: Cleanup
