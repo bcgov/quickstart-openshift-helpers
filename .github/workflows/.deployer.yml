@@ -9,9 +9,9 @@ on:
       ### Typical / recommended
       atomic:
         description: Atomic deployment?  That means fail all or nothing
-        default: 'true'
+        default: false
         required: false
-        type: string
+        type: boolean
       directory:
         description: Chart directory
         default:  'charts/app'
@@ -23,12 +23,11 @@ on:
         type: string
       oc_server:
         default: https://api.silver.devops.gov.bc.ca:6443
-        description: 'OpenShift server'
+        description: OpenShift server
         required: false
         type: string
       params:
-        description: 'Extra parameters to pass to helm upgrade'
-        default: ''
+        description: Extra parameters to pass to helm upgrade
         required: false
         type: string
       promote_images:
@@ -49,13 +48,22 @@ on:
         description: Paths used to trigger a deployment; e.g. ('./backend/' './frontend/)
         required: false
         type: string
-
-      ### Usually a bad idea / not recommended
-      repository:
-        description: Optionally, specify a different repo to clone
-        default: ${{ github.repository }}
+      db_user:
+        description: The database user
+        required: false
+        default: 'app'
+        type: string
+      debug:
+        description: Debug mode
+        default: false
+        required: false
+        type: boolean
+      db_triggers:
+        description: Paths used to trigger a database deployment; e.g. ('charts/crunchy/')
         required: false
         type: string
+
+      ### Usually a bad idea / not recommended
       timeout-minutes:
         description: 'Timeout minutes'
         default: 10
@@ -68,6 +76,9 @@ on:
         type: string
 
     outputs:
+      tag:
+        description: 'Which tag was used for deployment?'
+        value: ${{ jobs.deploy.outputs.tag }}
       triggered:
         description: 'Has a deployment has been triggered?'
         value: ${{ jobs.deploy.outputs.triggered }}
@@ -84,32 +95,41 @@ permissions: {}
 
 jobs:
   deploy:
-    name: Helm
+    name: Stack
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     outputs:
-      packages: ${{ steps.vars.outputs.packages }}
-      tag: ${{ steps.vars.outputs.tag }}
+      tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
-      ### Triggers, tag and release
+      - uses: bcgov/action-crunchy@v1.2.4
+        name: Deploy Crunchy
+        id: deploy_crunchy
+        with:
+          oc_namespace: ${{ secrets.OC_NAMESPACE }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          environment: ${{ inputs.environment }}
+          values_file: charts/crunchy/values.yml
+          triggers: ${{ inputs.db_triggers }}
+
 
       # Variables
       - if: inputs.tag  == ''
         id: pr
         uses: bcgov/action-get-pr@21f9351425cd55a98e869ee28919a512aa30647d # v0.0.1
 
-      - name: Vars
-        id: vars
+      - id: vars
         run: |
+          # Vars: tag and release
+
           # Tag defaults to PR number, but can be overridden by inputs.tag
           tag=${{ inputs.tag || steps.pr.outputs.pr }}
 
           # Release name includes run numbers to ensure uniqueness
-          release=${{ github.event.repository.name }}-${{ inputs.environment || inputs.tag || steps.pr.outputs.pr }}
+          release=${{ github.event.repository.name }}-${{ inputs.environment || steps.pr.outputs.pr || inputs.tag }}
           
-          # Version, used for non-PR releases
-          version=1.0.0-${{ github.run_number }}
+          # version, to support helm packaging for non-pr based releases (workflow_dispatch). default to 1.0.0+github run number
+          version=1.0.0+${{ github.run_number }}
           
           # Summary
           echo "tag=${tag}"
@@ -124,15 +144,13 @@ jobs:
           # Convert packages to JSON array for job matrix
           echo "packages=$(jq -cn '$ARGS.positional' --args ${{ inputs.promote_images }})" >> $GITHUB_OUTPUT
 
-      ### Deploy
-      - name: Interrupt deployments (PR only)
+      - name: Stop pre-existing deployments on PRs (status = pending-upgrade)
         if: github.event_name == 'pull_request'
         uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd # v1.2.3
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ inputs.oc_server }}
-          repository: ${{ inputs.repository }}
+          oc_server: ${{ vars.oc_server }}
           triggers: ${{ inputs.triggers }}
           commands: |
             # Interrupt any previous deployments (PR only)
@@ -143,31 +161,38 @@ jobs:
                 helm uninstall ${{ steps.vars.outputs.release }}
             fi
 
-      - name: Deploy Helm chart
+      - uses: actions/checkout@v4
+      - name: Debug Values File
+        if: inputs.debug == 'true'
+        run: ls -l charts/crunchy/values.yml
+
+      - name: Helm Deploy
         id: deploy
-        uses: bcgov/action-oc-runner@v1.0.0
+        uses: bcgov/action-oc-runner@10033668ef4374d9bb78149faa73e4ccda0e93dd # v1.2.3
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ inputs.oc_server }}
-          repository: ${{ inputs.repository }}
+          oc_server: ${{ vars.oc_server }}
           triggers: ${{ inputs.triggers }}
+          ref: ${{ github.ref }}
           commands: |
-            # Package Helm chart
-            cd ${{ inputs.directory }}
-            sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
-            helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" \
-              --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
+            # Deploy
 
+            # If directory provided, cd to it
+            [ -z "${{ inputs.directory }}" ]|| cd ${{ inputs.directory }}
+
+            # Helm package
+            sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
+            helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
+            # print the values.yaml file to see the values being used
             # Helm upgrade/rollout
             helm upgrade \
               --set-string global.repository=${{ github.repository }} \
-              --set-string global.tag=${{ steps.vars.outputs.tag }} \
+              --set-string global.tag="${{ steps.vars.outputs.tag }}" \
               --set-string global.config.databaseUser="${{ inputs.db_user }}" \
               --set-string global.databaseAlias="${{ steps.deploy_crunchy.outputs.release }}-crunchy" \
               ${{ inputs.params }} \
-              --install --wait ${{ inputs.atomic == 'true' && '--atomic' || ''}} \
-              ${{ steps.vars.outputs.release }} \
+              --install --wait ${{ inputs.atomic && '--atomic' || '' }} ${{ steps.vars.outputs.release }} \
               --timeout ${{ inputs.timeout-minutes }}m \
               --values ${{ inputs.values }} \
               ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz
