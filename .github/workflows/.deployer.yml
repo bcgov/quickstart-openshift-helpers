@@ -143,38 +143,38 @@ jobs:
                 helm uninstall ${{ steps.vars.outputs.release }}
             fi
 
-      # - name: Deploy Helm chart
-      #   id: deploy
-      #   uses: bcgov/action-oc-runner@v1.0.0
-      #   with:
-      #     oc_namespace: ${{ secrets.oc_namespace }}
-      #     oc_token: ${{ secrets.oc_token }}
-      #     oc_server: ${{ inputs.oc_server }}
-      #     repository: ${{ inputs.repository }}
-      #     triggers: ${{ inputs.triggers }}
-      #     commands: |
-      #       # Package Helm chart
-      #       cd ${{ inputs.directory }}
-      #       sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
-      #       helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" \
-      #         --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
+      - name: Deploy Helm chart
+        id: deploy
+        uses: bcgov/action-oc-runner@v1.0.0
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ inputs.oc_server }}
+          repository: ${{ inputs.repository }}
+          triggers: ${{ inputs.triggers }}
+          commands: |
+            # Package Helm chart
+            cd ${{ inputs.directory }}
+            sed -i 's/^name:.*/name: ${{ github.event.repository.name }}/' Chart.yaml
+            helm package -u . --app-version="tag-${{ steps.vars.outputs.tag }}_run-${{ github.run_number }}" \
+              --version=${{ steps.pr.outputs.pr || steps.vars.outputs.version }}
 
-      #       # Helm upgrade/rollout
-      #       helm upgrade \
-      #         --set-string global.repository=${{ github.repository }} \
-      #         --set-string global.tag=${{ steps.vars.outputs.tag }} \
-      #         ${{ inputs.params }} \
-      #         --install --wait ${{ inputs.atomic == 'true' && '--atomic' || ''}} \
-      #         ${{ steps.vars.outputs.release }} \
-      #         --timeout ${{ inputs.timeout-minutes }}m \
-      #         --values ${{ inputs.values }} \
-      #         ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz
+            # Helm upgrade/rollout
+            helm upgrade \
+              --set-string global.repository=${{ github.repository }} \
+              --set-string global.tag=${{ steps.vars.outputs.tag }} \
+              ${{ inputs.params }} \
+              --install --wait ${{ inputs.atomic == 'true' && '--atomic' || ''}} \
+              ${{ steps.vars.outputs.release }} \
+              --timeout ${{ inputs.timeout-minutes }}m \
+              --values ${{ inputs.values }} \
+              ./${{ github.event.repository.name }}-${{ steps.pr.outputs.pr || steps.vars.outputs.version }}.tgz
 
-      #       # Helm release history
-      #       helm history ${{ steps.vars.outputs.release }}
+            # Helm release history
+            helm history ${{ steps.vars.outputs.release }}
 
-      #       # Completed pod cleanup
-      #       oc delete po --field-selector=status.phase==Succeeded || true
+            # Completed pod cleanup
+            oc delete po --field-selector=status.phase==Succeeded || true
 
   promote:
     name: Promote Images
