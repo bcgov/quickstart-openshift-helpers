@@ -50,6 +50,15 @@ oc get "${OBJECT_TYPE}" "${OBJECT_SOURCE}" -o json \
     | if "'"${OBJECT_TYPE}"'" == "deployment" then
         .spec.selector.matchLabels.deployment = "'"${OBJECT_TARGET}"'"
         | .spec.template.metadata.labels.deployment = "'"${OBJECT_TARGET}"'"
+      elif "'"${OBJECT_TYPE}"'" == "statefulset" then
+        .spec.selector.matchLabels.statefulset = "'"${OBJECT_TARGET}"'"
+        | .spec.template.metadata.labels.statefulset = "'"${OBJECT_TARGET}"'"
+      elif "'"${OBJECT_TYPE}"'" == "daemonset" then
+        .spec.selector.matchLabels.daemonset = "'"${OBJECT_TARGET}"'"
+        | .spec.template.metadata.labels.daemonset = "'"${OBJECT_TARGET}"'"
+      elif "'"${OBJECT_TYPE}"'" == "replicaset" then
+        .spec.selector.matchLabels.replicaset = "'"${OBJECT_TARGET}"'"
+        | .spec.template.metadata.labels.replicaset = "'"${OBJECT_TARGET}"'"
       else .
       end' \
   > "${MANIFEST}"
