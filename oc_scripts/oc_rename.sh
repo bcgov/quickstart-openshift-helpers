@@ -25,7 +25,7 @@ trap 'rm -f "${MANIFEST}"' EXIT
 
 # Fail fast if the new object already exists
 if oc get "${OBJECT_TYPE}" "${OBJECT_TARGET}" &>/dev/null; then
-  echo "${OBJECT_TYPE^} '${OBJECT_TARGET}' already exists. Aborting to avoid overwrite."
+  echo "${OBJECT_TYPE^} '${OBJECT_TARGET}' already exists. Please choose a different target name or delete the existing object first. Aborting to avoid overwrite."
   exit 2
 fi
 
