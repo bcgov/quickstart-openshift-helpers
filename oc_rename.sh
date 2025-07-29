@@ -17,8 +17,6 @@ if [[ $# -lt 1 ]]; then
   exit 1
 fi
 
-set -x
-
 OBJECT_TYPE="${1}"
 OBJECT_SOURCE="${2}"
 OBJECT_TARGET="${3:-${OBJECT_SOURCE}-prev}"
