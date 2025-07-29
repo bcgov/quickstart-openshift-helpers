@@ -20,7 +20,7 @@ fi
 OBJECT_TYPE="${1}"
 OBJECT_SOURCE="${2}"
 OBJECT_TARGET="${3:-${OBJECT_SOURCE}-prev}"
-MANIFEST=$(mktemp "/tmp/${OBJECT_SOURCE}_$(date +%Y%m%d)_XXXXXX.json")
+MANIFEST=$(mktemp --suffix=".json")
 trap 'rm -f "${MANIFEST}"' EXIT
 
 # Fail fast if the new object already exists
