@@ -47,8 +47,16 @@ oc get "${OBJECT_TYPE}" "${OBJECT_SOURCE}" -o json \
       .status
     )
     | .metadata.name = "'"${OBJECT_TARGET}"'"
+<<<<<<< HEAD
     | .spec.selector.matchLabels.deployment = "'"${OBJECT_TARGET}"'"'
     $(if [[ "${OBJECT_TYPE}" == "deployment" ]]; then echo '| .spec.template.metadata.labels.deployment = "'"${OBJECT_TARGET}"'"'; fi)' \
+=======
+    | if $OBJECT_TYPE == "deployment" then
+        .spec.selector.matchLabels.deployment = "'"${OBJECT_TARGET}"'"
+        | .spec.template.metadata.labels.deployment = "'"${OBJECT_TARGET}"'"
+      else .
+      end' \
+>>>>>>> 38b5746 (Take Copilots suggesions for conditional jq)
   > "${MANIFEST}"
 
 # Delete the old object and apply the new one
