@@ -32,7 +32,7 @@ fi
 # Check if the old object exists
 if ! oc get "${OBJECT_TYPE}" "${OBJECT_SOURCE}" &>/dev/null; then
   echo "${OBJECT_TYPE^} '${OBJECT_SOURCE}' not found."
-  exit 0
+  exit 1
 fi
 
 # Export, clean, and update object manifest
