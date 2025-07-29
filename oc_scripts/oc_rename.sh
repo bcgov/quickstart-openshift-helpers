@@ -69,4 +69,4 @@ fi
 
 # Show matching objects for confirmation
 echo -e "\nMatching objects after renaming:"
-oc get "${OBJECT_TYPE}" -o name | grep -iE "^${OBJECT_TYPE}\.apps/(${OBJECT_SOURCE}|${OBJECT_TARGET})$"
+oc get "${OBJECT_TYPE}" -o name | grep -iE "^${OBJECT_TYPE}(\.[^/]*)?/(${OBJECT_SOURCE}|${OBJECT_TARGET})$"
