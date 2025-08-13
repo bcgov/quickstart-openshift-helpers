@@ -175,6 +175,25 @@ if [ $TEAM_COUNT -gt 1 ]; then
     
     printf "%-8s | %5d | %4d | %4d | %s\n" "$team" "$ADMIN_COUNT" "$EDIT_COUNT" "$VIEW_COUNT" "$RISK_LEVEL"
   done
+  
+  echo -e "\nRisk Level Explanations:"
+  echo -e "  HIGH:   No edit or view users - everyone has admin rights"
+  echo -e "          Indicates: Over-provisioning, poor access control discipline"
+  echo -e "          Risk: Security breach potential, compliance violations"
+  echo -e ""
+  echo -e "  MEDIUM: Some non-admin users, but admin users still dominate"
+  echo -e "          Indicates: Better practices, but still over-provisioned"
+  echo -e "          Risk: Moderate security risk, needs improvement"
+  echo -e ""
+  echo -e "  LOW:    Balanced role distribution, proper least-privilege"
+  echo -e "          Indicates: Good access control practices"
+  echo -e "          Risk: Minimal security risk"
+  echo -e ""
+  echo -e "Recommendations:"
+  echo -e "  - Review HIGH risk teams immediately"
+  echo -e "  - Implement role-based access control training"
+  echo -e "  - Establish admin user approval process"
+  echo -e "  - Regular access reviews for all teams"
 fi
 
 echo -e "\n---\n"
