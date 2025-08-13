@@ -13,10 +13,10 @@ ROLES=${1:-"admin edit view"}
 # Loop through the projects and report on rights
 for p in $(echo "${PROJECTS}" | awk '{print $1}'); do
   echo -e "\n---\n\nProject: $p"
-  echo -e "Name: $(echo "${PROJECTS}" | grep $p | awk -F" - " '{print $2}')"
+  echo -e "Name: $(echo "${PROJECTS}" | grep -w "$p" | awk -F" - " '{print $2}')"
 
   # Report on requested roles, where possible
-  if oc get rolebindings -n $p &> /dev/null; then
+  if oc get rolebindings -n "$p" &> /dev/null; then
     for role in ${ROLES}; do
       echo -e "\n${role}:"
       oc get rolebindings -n $p -o json \
