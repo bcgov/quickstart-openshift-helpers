@@ -19,7 +19,7 @@ for p in $(echo "${PROJECTS}" | awk '{print $1}'); do
   if oc get rolebindings -n "$p" &> /dev/null; then
     for role in ${ROLES}; do
       echo -e "\n${role}:"
-      oc get rolebindings -n $p -o json \
+      oc get rolebindings -n "$p" -o json \
         | jq -r '.items[] | select(.subjects[].kind=="User", .roleRef.name=="${role}") | .subjects[].name' \
         | grep -E ".+@.+" |  sort | uniq | sed "s/^/  /g"
     done
