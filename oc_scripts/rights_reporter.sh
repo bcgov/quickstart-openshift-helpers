@@ -194,6 +194,19 @@ if [ $TEAM_COUNT -gt 1 ]; then
   echo -e "  - Implement role-based access control training"
   echo -e "  - Establish admin user approval process"
   echo -e "  - Regular access reviews for all teams"
+  
+  echo -e "\nRisk Level Criteria:"
+  echo -e "  HIGH:   EDIT_COUNT == 0 AND VIEW_COUNT == 0"
+  echo -e "          (No edit users AND no view users)"
+  echo -e "          Example: 20 admin, 0 edit, 0 view"
+  echo -e ""
+  echo -e "  MEDIUM: ADMIN_COUNT > (EDIT_COUNT + VIEW_COUNT)"
+  echo -e "          (More admin users than non-admin users combined)"
+  echo -e "          Example: 15 admin, 2 edit, 1 view (15 > 3)"
+  echo -e ""
+  echo -e "  LOW:    ADMIN_COUNT <= (EDIT_COUNT + VIEW_COUNT)"
+  echo -e "          (Admin users <= non-admin users combined)"
+  echo -e "          Example: 5 admin, 8 edit, 3 view (5 <= 11)"
 fi
 
 echo -e "\n---\n"
