@@ -5,23 +5,23 @@ on:
     inputs:
       ### Typical / recommended
       flyway_args:
-        description: 'Flyway arguments'
-        default: 'info migrate info'
+        description: "Flyway arguments"
+        default: "info migrate info"
         required: false
         type: string
       flyway_locations:
-        description: 'Flyway migrations location'
-        default: 'filesystem:./migrations'
+        description: "Flyway migrations location"
+        default: "filesystem:./migrations"
         required: false
         type: string
       flyway_schema:
-        description: 'Flyway default schema'
-        default: 'users'
+        description: "Flyway default schema"
+        default: "users"
         required: false
         type: string
       schemaspy_schema:
-        description: 'SchemaSpy default schema'
-        default: 'users'
+        description: "SchemaSpy default schema"
+        default: "users"
         required: false
         type: string
 
@@ -49,7 +49,7 @@ jobs:
           - 5432:5432
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      - uses: actions/checkout@v5
 
       - name: Flyway
         uses: docker://flyway/flyway:10@sha256:43592cc125eb0594d9b013e8dced2fa67d473c091abaa5dec03b22f49e682949
