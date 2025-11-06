@@ -44,7 +44,7 @@ echo -e "\nService: ${SERVICE}\n"
 
 # Confirm
 echo "Please make sure the following files are present before continuing:"
-echo "${DOMAIN}.cert"
+echo "${DOMAIN}.pem"
 echo "${DOMAIN}.key"
 echo "${DOMAIN}.ca-cert"
 
@@ -59,9 +59,9 @@ fi
 echo "Installing route"
 # https://docs.openshift.com/container-platform/4.15/networking/routes/secured-routes.html#nw-ingress-creating-an-edge-route-with-a-custom-certificate_secured-routes
 if [ -z "${SUBDIR}" ]; then
-  oc create route edge --service=${SERVICE} --cert=${DOMAIN}.cert --key=${DOMAIN}.key --ca-cert=${DOMAIN}.ca-cert --hostname=${DOMAIN} ${SERVICE}-vanity
+  oc create route edge --service=${SERVICE} --cert=${DOMAIN}.pem --key=${DOMAIN}.key --ca-cert=${DOMAIN}.ca-cert --hostname=${DOMAIN} ${SERVICE}-vanity
 else
-  oc create route edge --service=${SERVICE} --cert=${DOMAIN}.cert --key=${DOMAIN}.key --ca-cert=${DOMAIN}.ca-cert --hostname=${DOMAIN} --path=${SUBDIR} ${SERVICE}-vanity
+  oc create route edge --service=${SERVICE} --cert=${DOMAIN}.pem --key=${DOMAIN}.key --ca-cert=${DOMAIN}.ca-cert --hostname=${DOMAIN} --path=${SUBDIR} ${SERVICE}-vanity
 fi
 
 # Visit and confirm the new route
