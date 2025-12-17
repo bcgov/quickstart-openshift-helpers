@@ -46,11 +46,9 @@ TARGET_PVC=$(oc get deployment "${TARGET_DEPLOYMENT}" -o jsonpath='{.spec.templa
 if [[ -n "${SOURCE_PVC}" && -n "${TARGET_PVC}" ]]; then
   SOURCE_PVC_CREATION_TIME=$(oc get pvc "${SOURCE_PVC}" -o jsonpath='{.metadata.creationTimestamp}')
   TARGET_PVC_CREATION_TIME=$(oc get pvc "${TARGET_PVC}" -o jsonpath='{.metadata.creationTimestamp}')
-  SOURCE_PVC_EPOCH=$(date -d "${SOURCE_PVC_CREATION_TIME}" +%s)
-  TARGET_PVC_EPOCH=$(date -d "${TARGET_PVC_CREATION_TIME}" +%s)
 
-  if [[ ${SOURCE_PVC_EPOCH} -gt ${TARGET_PVC_EPOCH} ]]; then
-    echo "WARNING: Source PVC '${SOURCE_PVC}' ($(date -d "${SOURCE_PVC_CREATION_TIME}" '+%Y-%m-%d %H:%M')) is NEWER than target PVC '${TARGET_PVC}' ($(date -d "${TARGET_PVC_CREATION_TIME}" '+%Y-%m-%d %H:%M'))."
+  if [[ "${SOURCE_PVC_CREATION_TIME}" > "${TARGET_PVC_CREATION_TIME}" ]]; then
+    echo "WARNING: Source PVC '${SOURCE_PVC}' (${SOURCE_PVC_CREATION_TIME:0:16}) is NEWER than target PVC '${TARGET_PVC}' (${TARGET_PVC_CREATION_TIME:0:16})."
     echo "This may be a reverse transfer that could overwrite newer data with older data."
     echo -n "Are you sure you want to continue? (yes/no): "
     read -r CONFIRM
