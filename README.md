@@ -38,12 +38,18 @@ These scripts can be used to migrate a postgres database.
 # 2. Rename the old db
 ./rename_deployment.sh fom-test-db
 
-# 3. Deploy the new db
+# 3. Avoid a collsion by appending a version number to your PVC in the OpenShift template
+#  - kind: PersistentVolumeClaim
+#    apiVersion: v1
+#    metadata:
+#      name: ${NAME}-${ZONE}-${COMPONENT}-${POSTGIS_VERSION} # <= right here!
+
+# 4. Deploy the new db
 oc process -f openshift.deploy.yml -p ZONE=test -p TAG=test | oc apply -f -
 
-# 4. Stream dump from old to new db
+# 5. Stream dump from old to new db
 ./db_transfer.sh fom-test-db-prev fom-test-db
 
-# 5. Scale up stack
+# 6. Scale up stack
 # Use web console
 ```
