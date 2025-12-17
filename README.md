@@ -42,7 +42,7 @@ These scripts can be used to migrate a postgres database.
 oc process -f openshift.deploy.yml -p ZONE=test -p TAG=test | oc apply -f -
 
 # 4. Stream dump from old to new db
-./db_transfer.sh fom-test-db fom-test-db-prev
+./db_transfer.sh fom-test-db-prev fom-test-db
 
 # 5. Scale up stack
 # Use web console
