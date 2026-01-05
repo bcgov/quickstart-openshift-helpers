@@ -31,7 +31,9 @@ jobs:
 
 `db_transfer.sh` - stream pg_dump from one container to pg_restore in another
 
-These scripts can be used to migrate a postgres database.
+## Example: Postgres Database Migration
+
+These scripts can be used to migrate a postgres or postgis database.
 
 Note: Make sure your template deploys the correct db version.  PR-based pipelines, which we strongly recommend, often require a merge before custom images are re-labeled.
 
