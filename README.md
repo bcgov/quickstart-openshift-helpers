@@ -36,8 +36,8 @@ These scripts can be used to migrate a postgres database.
 Note: Make sure your template deploys the correct db version.  PR-based pipelines, which we strongly recommend, often require a merge before custom images are re-labeled.
 
 ```
-# 1. Scale down stack
-# Use web console
+# 1. Scale down or delete stack (non-db only)
+# Use web console or cli
 
 # 2. Rename the old db
 ./rename_deployment.sh fom-test-db
@@ -54,6 +54,6 @@ oc process -f openshift.deploy.yml -p ZONE=test -p TAG=test | oc apply -f -
 # 5. Stream dump from old to new db
 ./db_transfer.sh fom-test-db-prev fom-test-db
 
-# 6. Scale up stack
-# Use web console
+# 6. Scale up stack or recreate deployments (e.g. re-run appropriate workflow)
+# Use web console, GH Actions workflow or cli
 ```
