@@ -5,7 +5,7 @@ on:
     inputs:
       ### Typical / recommended
       cleanup:
-        description: 'Type of cleanup; e.g. helm or label'
+        description: "Type of cleanup; e.g. helm or label"
         required: false
         type: string
       environment:
@@ -13,55 +13,55 @@ on:
         required: false
         type: string
       packages:
-        description: 'Space-separated list of packages to promote'
+        description: "Space-separated list of packages to promote"
         required: false
         type: string
       remove_pvc:
         required: false
         default: data-${{ github.event.repository.name }}-${{ github.event.number }}-bitnami-pg-0
         type: string
-        description: 'Comma separated list of PVCs to remove'
+        description: "Comma separated list of PVCs to remove"
 
       ### Usually a bad idea / not recommended
       merge_branch:
-        description: 'Merge target branch'
+        description: "Merge target branch"
         required: false
         type: string
         default: ${{ github.event.repository.default_branch }}
       cleanup_name:
-        description: 'Use if template/cleanup name differs from repo'
+        description: "Use if template/cleanup name differs from repo"
         type: string
         default: ${{ github.event.repository.name }}
       organization:
-        description: 'GitHub organization; e.g. bcgov'
+        description: "GitHub organization; e.g. bcgov"
         default: ${{ github.repository_owner }}
         required: false
         type: string
       repository:
-        description: 'GitHub repository, e.g. quickstart-openshift'
+        description: "GitHub repository, e.g. quickstart-openshift"
         default: ${{ github.event.repository.name }}
         required: false
         type: string
       tag_promote:
-        description: 'Tag to promote to; e.g. latest, test, demo or prod'
+        description: "Tag to promote to; e.g. latest, test, demo or prod"
         default: latest
         required: false
         type: string
       target:
-        description: 'Target; e.g. PR number, test or prod'
+        description: "Target; e.g. PR number, test or prod"
         default: ${{ github.event.number }}
         required: false
         type: string
 
     secrets:
       oc_namespace:
-        description: 'OpenShift namespace'
+        description: "OpenShift namespace"
         required: false
       oc_token:
-        description: 'OpenShift token'
+        description: "OpenShift token"
         required: false
       oc_server:
-        description: 'OpenShift server, defaults to https://api.silver.devops.gov.bc.ca:6443'
+        description: "OpenShift server, defaults to https://api.silver.devops.gov.bc.ca:6443"
         required: false
 
 permissions: {}
@@ -130,31 +130,7 @@ jobs:
             # If found, then remove
             helm status ${{ env.release }} && helm uninstall --no-hooks ${{ env.release }} || \
               echo "Not found: ${{ env.release }}"
-            # check if crunchy exists or else exit
-            CRUNCHY_RELEASE_NAME=pg-$(echo -n "${{github.event.repository.name}}" | md5sum | cut -c 1-8)
-            oc get PostgresCluster/${CRUNCHY_RELEASE_NAME}-crunchy || exit 0
 
-            # Remove the user from the crunchy cluster yaml and apply the changes
-            USER_TO_REMOVE='{"databases":["app-${{ github.event.number }}"],"name":"app-${{ github.event.number }}"}'
-            
-            echo 'getting current users from crunchy'
-            CURRENT_USERS=$(oc get PostgresCluster/${CRUNCHY_RELEASE_NAME}-crunchy -o json | jq '.spec.users')
-            echo "${CURRENT_USERS}"
-            
-            # Remove the user from the list, 
-            UPDATED_USERS=$(echo "${CURRENT_USERS}" | jq --argjson user "${USER_TO_REMOVE}" 'map(select(. != $user))')
-
-            PATCH_JSON=$(jq -n --argjson users "${UPDATED_USERS}" '{"spec": {"users": $users}}')
-            oc patch PostgresCluster/${CRUNCHY_RELEASE_NAME}-crunchy --type=merge -p "${PATCH_JSON}"
-            
-            # get primary crunchy pod and remove the role and db
-            CRUNCHY_PG_PRIMARY_POD_NAME=$(oc get pods -l postgres-operator.crunchydata.com/cluster=${CRUNCHY_RELEASE_NAME}-crunchy,postgres-operator.crunchydata.com/role=master -o json | jq -r '.items[0].metadata.name')
-            
-            echo "${CRUNCHY_PG_PRIMARY_POD_NAME}"
-            # Terminate all connections to the database before trying terminate and Drop the databse and role right after
-            oc exec -it "${CRUNCHY_PG_PRIMARY_POD_NAME}" -- bash -c "psql -U postgres -d postgres -c \"SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = 'app-${{ github.event.number }}' AND pid <> pg_backend_pid();\" && \psql -U postgres -d postgres -c \"DROP DATABASE \\\"app-${{ github.event.number }}\\\";\" && \psql -U postgres -d postgres -c \"DROP ROLE \\\"app-${{ github.event.number }}\\\";\""
-            echo 'database and role deleted'
-      
       - name: OC Template (label) Cleanup
         if: inputs.cleanup == 'label'
         uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0 # v1.3.0
