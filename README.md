@@ -31,6 +31,9 @@ jobs:
 `db_transfer.sh` - stream pg_dump from one container to pg_restore in another
 
 These scripts can be used to migrate a postgres database.
+
+Note: Make sure your template deploys the correct db version.  PR-based pipelines, which we strongly recommend, often require a merge before custom images are re-labeled.
+
 ```
 # 1. Scale down stack
 # Use web console
@@ -38,7 +41,7 @@ These scripts can be used to migrate a postgres database.
 # 2. Rename the old db
 ./rename_deployment.sh fom-test-db
 
-# 3. Avoid a collsion by appending a version number to your PVC in the OpenShift template
+# 3. Avoid a collision by appending a version number to your PVC in the OpenShift template
 #  - kind: PersistentVolumeClaim
 #    apiVersion: v1
 #    metadata:
