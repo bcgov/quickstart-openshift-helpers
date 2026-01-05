@@ -59,5 +59,5 @@ oc process -f openshift.deploy.yml -p ZONE=test -p TAG=test \
 ./db_transfer.sh your-db-prev your-db
 
 # 6. Scale up stack or recreate deployments
-# Use web console, GH Actions workflow or cli
+# Use web console, GitHub Actions workflow or cli
 ```
