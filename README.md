@@ -28,6 +28,7 @@ jobs:
 # ./oc_scripts
 
 `rename_deployment.sh` - rename a deployment (metadata, labels)
+
 `db_transfer.sh` - stream pg_dump from one container to pg_restore in another
 
 These scripts can be used to migrate a postgres database.
