@@ -39,21 +39,23 @@ Note: Make sure your template deploys the correct db version.  PR-based pipeline
 # 1. Scale down or delete stack (non-db only)
 # Use web console or cli
 
-# 2. Rename the old db (`-prev` automatically appended)
+# 2. Rename the old db (`-prev` auto-appended)
 ./rename_deployment.sh your-db
 
-# 3. Avoid a collision by appending a version number to your PVC in the OpenShift template, e.g.:
+# 3. Make sure old and new PVC names are different
+# E.g. Append DB_VERSION in OpenShift template:
 #  - kind: PersistentVolumeClaim
 #    apiVersion: v1
 #    metadata:
-#      name: ${NAME}-${ZONE}-${COMPONENT}-${DB_VERSION} # <= right here!
+#      name: ${NAME}-${ZONE}-${COMPONENT}-${DB_VERSION}
 
 # 4. Deploy the new db
-oc process -f openshift.deploy.yml -p ZONE=test -p TAG=test | oc apply -f -
+oc process -f openshift.deploy.yml -p ZONE=test -p TAG=test \
+  | oc apply -f -
 
 # 5. Stream dump from old to new db
 ./db_transfer.sh your-db-prev your-db
 
-# 6. Scale up stack or recreate deployments (e.g. re-run appropriate workflow)
+# 6. Scale up stack or recreate deployments
 # Use web console, GH Actions workflow or cli
 ```
