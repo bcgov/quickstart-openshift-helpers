@@ -42,6 +42,7 @@ if ! oc get po -l deployment="${TARGET_DEPLOYMENT}" --no-headers -o name | grep 
 fi
 
 # Query to get table names and row counts
+# Note: n_live_tup is an estimate, not exact count (based on statistics)
 COUNT_QUERY="
 SELECT schemaname || '.' || relname AS table_name, n_live_tup AS row_count
 FROM pg_stat_user_tables
@@ -94,5 +95,5 @@ else
   echo "❌ Differences found:"
   # Show differences without context
   echo "Changed tables:"
-  echo "$DIFF_OUTPUT" | grep '^[+-]' | grep -v '^+++\|^---'
+  echo "$DIFF_OUTPUT" | grep -E '^[+-][^+-]'
 fi
