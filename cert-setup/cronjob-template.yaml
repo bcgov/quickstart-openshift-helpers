@@ -131,9 +131,6 @@ objects:
         BACKED_UP=0
         SKIPPED=0
         
-        BACKED_UP=0
-        SKIPPED=0
-        
         # Create a single temp directory for all operations
         WORK_DIR=$(mktemp -d)
         
