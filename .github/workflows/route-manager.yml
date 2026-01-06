@@ -109,12 +109,14 @@ jobs:
           # Store certificates in environment for proper handling
           # Certificate
           echo "CERT_CONTENT<<EOF" >> $GITHUB_ENV
-          echo "${{ inputs.certificate || secrets.certificate }}" >> $GITHUB_ENV
+          CERT="${{ inputs.certificate || secrets.certificate }}"
+          echo "${CERT}" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
           # Private key
           echo "KEY_CONTENT<<EOF" >> $GITHUB_ENV
-          echo "${{ inputs.private_key || secrets.private_key }}" >> $GITHUB_ENV
+          PKEY="${{ inputs.private_key || secrets.private_key }}"
+          echo "${PKEY}" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
           # CA certificate
@@ -137,22 +139,24 @@ jobs:
           done <<< "${{ inputs.ca_certificate || secrets.ca_certificate }}"
 
       - name: Create certificate files
+        env:
+          DOMAIN: ${{ inputs.domain }}
         run: |
           cd /tmp/certs
 
           # Create certificate files from environment variables
-          printf '%s\n' "${{ env.CERT_CONTENT }}" > "${{ inputs.domain }}.pem"
-          printf '%s\n' "${{ env.KEY_CONTENT }}" > "${{ inputs.domain }}.key"
-          printf '%s\n' "${{ env.CA_CONTENT }}" > "${{ inputs.domain }}.ca-cert"
+          printf '%s' "${{ env.CERT_CONTENT }}" > "${DOMAIN}.pem"
+          printf '%s' "${{ env.KEY_CONTENT }}" > "${DOMAIN}.key"
+          printf '%s' "${{ env.CA_CONTENT }}" > "${DOMAIN}.ca-cert"
 
           # Set secure permissions
-          chmod 600 "${{ inputs.domain }}.key"
-          chmod 644 "${{ inputs.domain }}.pem"
-          chmod 644 "${{ inputs.domain }}.ca-cert"
+          chmod 600 "${DOMAIN}.key"
+          chmod 644 "${DOMAIN}.pem"
+          chmod 644 "${DOMAIN}.ca-cert"
 
           # Verify files were created
           echo "Certificate files created:"
-          ls -l "${{ inputs.domain }}".*
+          ls -l "${DOMAIN}."*
 
       - name: Create or update route in OpenShift
         # yamllint disable-line rule:line-length
