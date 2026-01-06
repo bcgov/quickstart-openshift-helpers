@@ -23,7 +23,8 @@ set -euo pipefail
 
 # Usage
 if [[ $# -lt 2 ]]; then
-  grep -v '^#!' "$0" | awk '/^#/ { sub(/^# ?/, ""); print; next } NF==0 { exit }'
+  script_path="${BASH_SOURCE[0]:-$0}"
+  grep -v '^#!' "$script_path" | awk '/^#/ { sub(/^# ?/, ""); print; next } NF==0 { exit }'
   exit 1
 fi
 
