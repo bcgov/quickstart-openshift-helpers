@@ -1,0 +1,256 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: certificate-backup-cronjob
+  annotations:
+    description: "Template for deploying a CronJob that backs up route certificates to secrets"
+    tags: "certificates,backup,routes"
+    iconClass: "icon-certificate"
+parameters:
+  - name: SCHEDULE
+    description: "Cron schedule for the backup job (default: daily at 2 AM)"
+    value: "0 2 * * *"
+    required: true
+  - name: SECRET_PREFIX
+    description: "Prefix for backup secret names"
+    value: "backup"
+    required: true
+  - name: ROUTE_NAME
+    description: "Specific route name to backup (leave empty to backup all routes)"
+    value: ""
+    required: false
+  - name: LABEL_SELECTOR
+    description: "Label selector to filter routes (e.g., 'app=myapp')"
+    value: ""
+    required: false
+  - name: IMAGE
+    description: "OpenShift CLI image to use"
+    value: "image-registry.openshift-image-registry.svc:5000/openshift/cli:latest"
+    required: true
+  - name: SERVICE_ACCOUNT
+    description: "Service account with permissions to read routes and create secrets"
+    value: "certificate-backup-sa"
+    required: true
+objects:
+  # Service Account for the backup job
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: ${SERVICE_ACCOUNT}
+      labels:
+        app: certificate-backup
+
+  # Role with permissions to read routes and manage secrets
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: Role
+    metadata:
+      name: certificate-backup-role
+      labels:
+        app: certificate-backup
+    rules:
+      - apiGroups:
+          - route.openshift.io
+        resources:
+          - routes
+        verbs:
+          - get
+          - list
+      - apiGroups:
+          - ""
+        resources:
+          - secrets
+        verbs:
+          - get
+          - list
+          - create
+          - update
+          - delete
+
+  # RoleBinding to bind the role to the service account
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      name: certificate-backup-rolebinding
+      labels:
+        app: certificate-backup
+    subjects:
+      - kind: ServiceAccount
+        name: ${SERVICE_ACCOUNT}
+    roleRef:
+      kind: Role
+      name: certificate-backup-role
+      apiGroup: rbac.authorization.k8s.io
+
+  # ConfigMap containing the backup script
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: certificate-backup-script
+      labels:
+        app: certificate-backup
+    data:
+      backup_certs.sh: |
+        #!/bin/bash
+        set -euo pipefail
+        
+        # Certificate Backup Script for OpenShift CronJob
+        
+        echo "Starting certificate backup at $(date)"
+        echo "Namespace: $(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)"
+        
+        # Parse options from environment variables
+        ROUTE="${ROUTE_NAME:-}"
+        LABEL="${LABEL_SELECTOR:-}"
+        PREFIX="${SECRET_PREFIX:-backup}"
+        
+        echo "Configuration:"
+        echo "  Secret prefix: ${PREFIX}"
+        if [[ -n "${ROUTE}" ]]; then
+          echo "  Target route: ${ROUTE}"
+        fi
+        if [[ -n "${LABEL}" ]]; then
+          echo "  Label selector: ${LABEL}"
+        fi
+        echo ""
+        
+        # Build the oc get routes command
+        GET_ROUTES_CMD="oc get routes -o json"
+        
+        if [[ -n "${ROUTE}" ]]; then
+          GET_ROUTES_CMD="oc get route ${ROUTE} -o json"
+        elif [[ -n "${LABEL}" ]]; then
+          GET_ROUTES_CMD="oc get routes -l ${LABEL} -o json"
+        fi
+        
+        # Get routes and process them
+        ROUTES_JSON=$(eval "${GET_ROUTES_CMD}")
+        
+        # Handle single route vs multiple routes JSON structure
+        if [[ -n "${ROUTE}" ]]; then
+          ROUTES_JSON="{\"items\":[${ROUTES_JSON}]}"
+        fi
+        
+        TOTAL_ROUTES=$(echo "${ROUTES_JSON}" | jq '.items | length')
+        echo "Found ${TOTAL_ROUTES} route(s) to process"
+        echo ""
+        
+        BACKED_UP=0
+        SKIPPED=0
+        
+        # Process each route
+        for i in $(seq 0 $((TOTAL_ROUTES - 1))); do
+          ROUTE_NAME=$(echo "${ROUTES_JSON}" | jq -r ".items[${i}].metadata.name")
+          TLS_TERMINATION=$(echo "${ROUTES_JSON}" | jq -r ".items[${i}].spec.tls.termination // empty")
+          
+          if [[ -z "${TLS_TERMINATION}" || "${TLS_TERMINATION}" == "null" ]]; then
+            echo "⊘ Skipping route '${ROUTE_NAME}': No TLS configuration"
+            SKIPPED=$((SKIPPED + 1))
+            continue
+          fi
+          
+          echo "→ Processing route '${ROUTE_NAME}' (TLS: ${TLS_TERMINATION})"
+          
+          # Extract certificate components
+          CERT=$(echo "${ROUTES_JSON}" | jq -r ".items[${i}].spec.tls.certificate // empty")
+          KEY=$(echo "${ROUTES_JSON}" | jq -r ".items[${i}].spec.tls.key // empty")
+          CA_CERT=$(echo "${ROUTES_JSON}" | jq -r ".items[${i}].spec.tls.caCertificate // empty")
+          DEST_CA_CERT=$(echo "${ROUTES_JSON}" | jq -r ".items[${i}].spec.tls.destinationCACertificate // empty")
+          
+          # Check if there are any certificates to backup
+          if [[ -z "${CERT}" && -z "${KEY}" && -z "${CA_CERT}" && -z "${DEST_CA_CERT}" ]]; then
+            echo "  ⊘ No certificates found in route"
+            SKIPPED=$((SKIPPED + 1))
+            continue
+          fi
+          
+          # Create secret name
+          SECRET_NAME="${PREFIX}-${ROUTE_NAME}-tls"
+          
+          # Build the secret creation command with only present fields
+          SECRET_DATA=""
+          if [[ -n "${CERT}" ]]; then
+            SECRET_DATA="${SECRET_DATA} --from-literal=tls.crt=\"${CERT}\""
+          fi
+          if [[ -n "${KEY}" ]]; then
+            SECRET_DATA="${SECRET_DATA} --from-literal=tls.key=\"${KEY}\""
+          fi
+          if [[ -n "${CA_CERT}" ]]; then
+            SECRET_DATA="${SECRET_DATA} --from-literal=ca.crt=\"${CA_CERT}\""
+          fi
+          if [[ -n "${DEST_CA_CERT}" ]]; then
+            SECRET_DATA="${SECRET_DATA} --from-literal=destination-ca.crt=\"${DEST_CA_CERT}\""
+          fi
+          
+          # Add annotations
+          ANNOTATIONS="route.openshift.io/source-route=${ROUTE_NAME},backup.openshift.io/timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ),backup.openshift.io/tls-termination=${TLS_TERMINATION}"
+          
+          # Check if secret already exists and delete it
+          if oc get secret "${SECRET_NAME}" &>/dev/null; then
+            echo "  → Updating existing secret..."
+            oc delete secret "${SECRET_NAME}"
+          fi
+          
+          # Create the secret
+          eval "oc create secret generic ${SECRET_NAME} ${SECRET_DATA}" &>/dev/null
+          
+          # Add annotations and label
+          oc annotate secret "${SECRET_NAME}" ${ANNOTATIONS} &>/dev/null
+          oc label secret "${SECRET_NAME}" backup.openshift.io/type=route-tls &>/dev/null
+          
+          echo "  ✓ Created/updated secret: ${SECRET_NAME}"
+          BACKED_UP=$((BACKED_UP + 1))
+        done
+        
+        echo ""
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "Backup completed at $(date)"
+        echo "  Total routes: ${TOTAL_ROUTES}"
+        echo "  Backed up: ${BACKED_UP}"
+        echo "  Skipped: ${SKIPPED}"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  # CronJob to run the backup script
+  - apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: certificate-backup
+      labels:
+        app: certificate-backup
+    spec:
+      schedule: ${SCHEDULE}
+      concurrencyPolicy: Forbid
+      successfulJobsHistoryLimit: 3
+      failedJobsHistoryLimit: 3
+      jobTemplate:
+        metadata:
+          labels:
+            app: certificate-backup
+        spec:
+          template:
+            metadata:
+              labels:
+                app: certificate-backup
+            spec:
+              serviceAccountName: ${SERVICE_ACCOUNT}
+              restartPolicy: OnFailure
+              containers:
+                - name: backup
+                  image: ${IMAGE}
+                  command:
+                    - /bin/bash
+                    - /scripts/backup_certs.sh
+                  env:
+                    - name: ROUTE_NAME
+                      value: ${ROUTE_NAME}
+                    - name: LABEL_SELECTOR
+                      value: ${LABEL_SELECTOR}
+                    - name: SECRET_PREFIX
+                      value: ${SECRET_PREFIX}
+                  volumeMounts:
+                    - name: script
+                      mountPath: /scripts
+              volumes:
+                - name: script
+                  configMap:
+                    name: certificate-backup-script
+                    defaultMode: 0755
