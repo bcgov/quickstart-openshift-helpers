@@ -72,7 +72,8 @@ TARGET_TOTAL=$(echo "$TARGET_COUNTS" | wc -l)
 echo "... ($TARGET_TOTAL tables total)"
 
 # Diff and summarize
-DIFF_OUTPUT=$(diff -u <(echo "$SOURCE_COUNTS") <(echo "$TARGET_COUNTS") || true)
+DIFF_OUTPUT=$(diff -u --label "Source (${SOURCE_DEPLOYMENT})" <(echo "$SOURCE_COUNTS") \
+                 --label "Target (${TARGET_DEPLOYMENT})" <(echo "$TARGET_COUNTS") || true)
 
 echo
 echo "--- Comparison Result ---"
