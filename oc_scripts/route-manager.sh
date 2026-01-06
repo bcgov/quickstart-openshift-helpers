@@ -51,15 +51,16 @@ if oc get route "${ROUTE_NAME}" &>/dev/null; then
     sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
 
   # Create patch JSON
+  PATCH_FILE=$(mktemp)
   PATCH="{\"spec\":{\"tls\":{\"certificate\":\"${CERT_ESC}\","
   PATCH="${PATCH}\"key\":\"${KEY_ESC}\","
   PATCH="${PATCH}\"caCertificate\":\"${CA_ESC}\"}}}"
-  echo "${PATCH}" > /tmp/route-patch.json
+  echo "${PATCH}" > "${PATCH_FILE}"
 
   # Apply patch
   oc patch route "${ROUTE_NAME}" --type=merge \
-    --patch-file=/tmp/route-patch.json
-  rm -f /tmp/route-patch.json
+    --patch-file="${PATCH_FILE}"
+  rm -f "${PATCH_FILE}"
   echo "Route patched successfully"
 else
   # Create the route
