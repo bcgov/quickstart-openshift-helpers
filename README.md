@@ -51,6 +51,8 @@ jobs:
 
 # ./oc_scripts
 
+`route-manager.sh` - create or update OpenShift routes with TLS certificates
+
 `rename_deployment.sh` - rename a deployment (metadata, labels)
 
 `db_transfer.sh` - stream pg_dump from one container to pg_restore in another
