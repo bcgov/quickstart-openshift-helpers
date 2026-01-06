@@ -93,20 +93,20 @@ jobs:
             cp ./cert-setup/backup_certs.sh /tmp/backup_certs.sh
             chmod +x /tmp/backup_certs.sh
             
-            # Build command with optional parameters
-            CMD="/tmp/backup_certs.sh"
+            # Build command arguments array
+            ARGS=()
             
             if [[ -n "${{ inputs.route }}" ]]; then
-              CMD="${CMD} --route ${{ inputs.route }}"
+              ARGS+=("--route" "${{ inputs.route }}")
             fi
             
             if [[ -n "${{ inputs.label }}" ]]; then
-              CMD="${CMD} --label '${{ inputs.label }}'"
+              ARGS+=("--label" "${{ inputs.label }}")
             fi
             
             if [[ -n "${{ inputs.prefix }}" ]]; then
-              CMD="${CMD} --prefix ${{ inputs.prefix }}"
+              ARGS+=("--prefix" "${{ inputs.prefix }}")
             fi
             
-            # Run backup script
-            eval "${CMD}"
+            # Run backup script with arguments
+            /tmp/backup_certs.sh "${ARGS[@]}"

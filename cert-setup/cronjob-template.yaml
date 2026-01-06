@@ -113,21 +113,15 @@ objects:
         fi
         echo ""
         
-        # Build the oc get routes command
-        GET_ROUTES_CMD="oc get routes -o json"
-        
-        if [[ -n "${ROUTE}" ]]; then
-          GET_ROUTES_CMD="oc get route ${ROUTE} -o json"
-        elif [[ -n "${LABEL}" ]]; then
-          GET_ROUTES_CMD="oc get routes -l ${LABEL} -o json"
-        fi
-        
         # Get routes and process them
-        ROUTES_JSON=$(eval "${GET_ROUTES_CMD}")
-        
-        # Handle single route vs multiple routes JSON structure
         if [[ -n "${ROUTE}" ]]; then
+          ROUTES_JSON=$(oc get route "${ROUTE}" -o json)
+          # Single route - wrap in array
           ROUTES_JSON="{\"items\":[${ROUTES_JSON}]}"
+        elif [[ -n "${LABEL}" ]]; then
+          ROUTES_JSON=$(oc get routes -l "${LABEL}" -o json)
+        else
+          ROUTES_JSON=$(oc get routes -o json)
         fi
         
         TOTAL_ROUTES=$(echo "${ROUTES_JSON}" | jq '.items | length')
@@ -136,6 +130,12 @@ objects:
         
         BACKED_UP=0
         SKIPPED=0
+        
+        BACKED_UP=0
+        SKIPPED=0
+        
+        # Create a single temp directory for all operations
+        WORK_DIR=$(mktemp -d)
         
         # Process each route
         for i in $(seq 0 $((TOTAL_ROUTES - 1))); do
@@ -168,7 +168,8 @@ objects:
           
           # Build the secret creation command with only present fields
           # Use temporary files to safely handle certificate data
-          TEMP_DIR=$(mktemp -d)
+          TEMP_DIR="${WORK_DIR}/${ROUTE_NAME}"
+          mkdir -p "${TEMP_DIR}"
           
           HAS_DATA=false
           if [[ -n "${CERT}" ]]; then
@@ -191,7 +192,6 @@ objects:
           if [[ "${HAS_DATA}" == "false" ]]; then
             echo "  ⊘ No certificate data to backup"
             SKIPPED=$((SKIPPED + 1))
-            rm -rf "${TEMP_DIR}"
             continue
           fi
           
@@ -212,12 +212,12 @@ objects:
           oc annotate secret "${SECRET_NAME}" ${ANNOTATIONS} &>/dev/null
           oc label secret "${SECRET_NAME}" backup.openshift.io/type=route-tls &>/dev/null
           
-          # Clean up temp files
-          rm -rf "${TEMP_DIR}"
-          
           echo "  ✓ Created/updated secret: ${SECRET_NAME}"
           BACKED_UP=$((BACKED_UP + 1))
         done
+        
+        # Clean up work directory
+        rm -rf "${WORK_DIR}"
         
         echo ""
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
