@@ -70,13 +70,13 @@ echo "Comparing source and target table counts..."
 echo
 echo "Source (${SOURCE_DEPLOYMENT}):"
 echo "$SOURCE_COUNTS" | head -20
-SOURCE_TOTAL=$(echo "$SOURCE_COUNTS" | wc -l)
+SOURCE_TOTAL=$(echo "$SOURCE_COUNTS" | grep -c .)
 echo "... ($SOURCE_TOTAL tables total)"
 
 echo
 echo "Target (${TARGET_DEPLOYMENT}):"
 echo "$TARGET_COUNTS" | head -20
-TARGET_TOTAL=$(echo "$TARGET_COUNTS" | wc -l)
+TARGET_TOTAL=$(echo "$TARGET_COUNTS" | grep -c .)
 echo "... ($TARGET_TOTAL tables total)"
 
 # Diff and summarize
