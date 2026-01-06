@@ -24,7 +24,7 @@ parameters:
     value: ""
     required: false
   - name: IMAGE
-    description: "OpenShift CLI image to use"
+    description: "OpenShift CLI image to use. Consider using a specific version tag instead of :latest for production."
     value: "image-registry.openshift-image-registry.svc:5000/openshift/cli:latest"
     required: true
   - name: SERVICE_ACCOUNT
@@ -167,18 +167,32 @@ objects:
           SECRET_NAME="${PREFIX}-${ROUTE_NAME}-tls"
           
           # Build the secret creation command with only present fields
-          SECRET_DATA=""
+          # Use temporary files to safely handle certificate data
+          TEMP_DIR=$(mktemp -d)
+          
+          HAS_DATA=false
           if [[ -n "${CERT}" ]]; then
-            SECRET_DATA="${SECRET_DATA} --from-literal=tls.crt=\"${CERT}\""
+            echo -n "${CERT}" > "${TEMP_DIR}/tls.crt"
+            HAS_DATA=true
           fi
           if [[ -n "${KEY}" ]]; then
-            SECRET_DATA="${SECRET_DATA} --from-literal=tls.key=\"${KEY}\""
+            echo -n "${KEY}" > "${TEMP_DIR}/tls.key"
+            HAS_DATA=true
           fi
           if [[ -n "${CA_CERT}" ]]; then
-            SECRET_DATA="${SECRET_DATA} --from-literal=ca.crt=\"${CA_CERT}\""
+            echo -n "${CA_CERT}" > "${TEMP_DIR}/ca.crt"
+            HAS_DATA=true
           fi
           if [[ -n "${DEST_CA_CERT}" ]]; then
-            SECRET_DATA="${SECRET_DATA} --from-literal=destination-ca.crt=\"${DEST_CA_CERT}\""
+            echo -n "${DEST_CA_CERT}" > "${TEMP_DIR}/destination-ca.crt"
+            HAS_DATA=true
+          fi
+          
+          if [[ "${HAS_DATA}" == "false" ]]; then
+            echo "  ⊘ No certificate data to backup"
+            SKIPPED=$((SKIPPED + 1))
+            rm -rf "${TEMP_DIR}"
+            continue
           fi
           
           # Add annotations
@@ -190,12 +204,16 @@ objects:
             oc delete secret "${SECRET_NAME}"
           fi
           
-          # Create the secret
-          eval "oc create secret generic ${SECRET_NAME} ${SECRET_DATA}" &>/dev/null
+          # Create the secret from files
+          oc create secret generic "${SECRET_NAME}" \
+            --from-file="${TEMP_DIR}/" &>/dev/null
           
           # Add annotations and label
           oc annotate secret "${SECRET_NAME}" ${ANNOTATIONS} &>/dev/null
           oc label secret "${SECRET_NAME}" backup.openshift.io/type=route-tls &>/dev/null
+          
+          # Clean up temp files
+          rm -rf "${TEMP_DIR}"
           
           echo "  ✓ Created/updated secret: ${SECRET_NAME}"
           BACKED_UP=$((BACKED_UP + 1))

@@ -87,6 +87,12 @@ if ! command -v oc &> /dev/null; then
   exit 1
 fi
 
+# Check if jq is available
+if ! command -v jq &> /dev/null; then
+  echo "Error: 'jq' command not found. Please install jq for JSON parsing."
+  exit 1
+fi
+
 # Set namespace if specified
 NAMESPACE_FLAG=""
 if [[ -n "${NAMESPACE}" ]]; then
@@ -171,18 +177,33 @@ for i in $(seq 0 $((TOTAL_ROUTES - 1))); do
   fi
   
   # Build the secret creation command with only present fields
-  SECRET_DATA=""
+  # Use temporary files to safely handle certificate data
+  TEMP_DIR=$(mktemp -d)
+  trap "rm -rf ${TEMP_DIR}" EXIT
+  
+  HAS_DATA=false
   if [[ -n "${CERT}" ]]; then
-    SECRET_DATA="${SECRET_DATA} --from-literal=tls.crt=\"${CERT}\""
+    echo -n "${CERT}" > "${TEMP_DIR}/tls.crt"
+    HAS_DATA=true
   fi
   if [[ -n "${KEY}" ]]; then
-    SECRET_DATA="${SECRET_DATA} --from-literal=tls.key=\"${KEY}\""
+    echo -n "${KEY}" > "${TEMP_DIR}/tls.key"
+    HAS_DATA=true
   fi
   if [[ -n "${CA_CERT}" ]]; then
-    SECRET_DATA="${SECRET_DATA} --from-literal=ca.crt=\"${CA_CERT}\""
+    echo -n "${CA_CERT}" > "${TEMP_DIR}/ca.crt"
+    HAS_DATA=true
   fi
   if [[ -n "${DEST_CA_CERT}" ]]; then
-    SECRET_DATA="${SECRET_DATA} --from-literal=destination-ca.crt=\"${DEST_CA_CERT}\""
+    echo -n "${DEST_CA_CERT}" > "${TEMP_DIR}/destination-ca.crt"
+    HAS_DATA=true
+  fi
+  
+  if [[ "${HAS_DATA}" == "false" ]]; then
+    echo "  ⊘ No certificate data to backup"
+    SKIPPED=$((SKIPPED + 1))
+    rm -rf "${TEMP_DIR}"
+    continue
   fi
   
   # Add annotations to track source route and backup timestamp
@@ -194,14 +215,19 @@ for i in $(seq 0 $((TOTAL_ROUTES - 1))); do
     oc delete secret "${SECRET_NAME}" ${NAMESPACE_FLAG}
   fi
   
-  # Create the secret
-  eval "oc create secret generic ${SECRET_NAME} ${SECRET_DATA} ${NAMESPACE_FLAG}" &>/dev/null
+  # Create the secret from files
+  oc create secret generic "${SECRET_NAME}" \
+    --from-file="${TEMP_DIR}/" \
+    ${NAMESPACE_FLAG} &>/dev/null
   
   # Add annotations
   oc annotate secret "${SECRET_NAME}" ${ANNOTATIONS} ${NAMESPACE_FLAG} &>/dev/null
   
   # Add label for easy identification
   oc label secret "${SECRET_NAME}" backup.openshift.io/type=route-tls ${NAMESPACE_FLAG} &>/dev/null
+  
+  # Clean up temp files
+  rm -rf "${TEMP_DIR}"
   
   echo "  ✓ Created/updated secret: ${SECRET_NAME}"
   BACKED_UP=$((BACKED_UP + 1))
