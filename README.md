@@ -3,6 +3,30 @@
 # QuickStart OpenShift - Helpers
 Workflows and any other common code used by bcgov/quickstart-openshift (template).
 
+# Workflows
+
+## Route Manager
+
+Automate OpenShift route management using GitHub secrets. Update certificates without CLI access.
+
+See [cert-setup/README.md](cert-setup/README.md) for detailed usage.
+
+Example:
+```yaml
+jobs:
+  update-route:
+    uses: bcgov/quickstart-openshift-helpers/.github/workflows/route-manager.yml@vX.Y.Z
+    secrets:
+      oc_token: ${{ secrets.OC_TOKEN }}
+      oc_namespace: ${{ secrets.OC_NAMESPACE }}
+      certificate: ${{ secrets.CERTIFICATE }}
+      private_key: ${{ secrets.PRIVATE_KEY }}
+      ca_certificate: ${{ secrets.CA_CERTIFICATE }}
+    with:
+      domain: example.nrs.gov.bc.ca
+      service: my-app-prod-frontend
+```
+
 # Breaking Changes
 
 `oc_server` has been moved to a secret.  It is an optional field, only affecting some users.
