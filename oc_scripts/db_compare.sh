@@ -10,6 +10,7 @@
 # Requirements:
 # - Both deployments must have running pods managed by the given deployment names.
 # - The oc CLI must be authenticated to the OpenShift cluster
+# - Environment variables POSTGRES_USER and POSTGRES_DB must be set in the pods
 #
 # Notes:
 # - Uses pg_stat_user_tables to get live row counts
