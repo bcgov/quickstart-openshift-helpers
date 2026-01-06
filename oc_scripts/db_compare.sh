@@ -19,12 +19,7 @@
 
 # Strict mode: exit on error, unset vars, or failed pipes
 set -euo pipefail
-
-# Usage
-if [[ $# -lt 2 ]]; then
-  grep -v '^#!' "$0" | awk '/^#/ { sub(/^# ?/, ""); print; next } NF==0 { exit }'
-  exit 1
-fi
+set -x
 
 # Usage
 if [[ $# -ne 2 ]]; then
@@ -35,6 +30,16 @@ fi
 # Get deployment names from arguments
 SOURCE_DEPLOYMENT="$1"
 TARGET_DEPLOYMENT="$2"
+
+# Fail fast if pods aren't found
+if ! oc get po -l deployment="${SOURCE_DEPLOYMENT}" | grep -q .; then
+  echo "No pods found for deployment '${SOURCE_DEPLOYMENT}'."
+  exit 2
+fi
+if ! oc get po -l deployment="${TARGET_DEPLOYMENT}" | grep -q .; then
+  echo "No pods found for deployment '${TARGET_DEPLOYMENT}'."
+  exit 2
+fi
 
 # Query to get table names and row counts
 COUNT_QUERY="
