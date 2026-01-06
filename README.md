@@ -31,6 +31,8 @@ jobs:
 
 `db_transfer.sh` - stream pg_dump from one container to pg_restore in another
 
+`db_compare.sh` - compare PostgreSQL table row counts between two deployments
+
 ## Example: Postgres Database Migration
 
 These scripts can be used to migrate a postgres or postgis database.
