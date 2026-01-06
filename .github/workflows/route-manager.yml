@@ -157,7 +157,7 @@ jobs:
 
           # Verify files were created and are not empty
           echo "Certificate files created:"
-          ls -lh "${DOMAIN}."*
+          ls -lh "${DOMAIN}.pem" "${DOMAIN}.key" "${DOMAIN}.ca-cert"
 
           # Check file sizes
           for file in "${DOMAIN}.pem" "${DOMAIN}.key" "${DOMAIN}.ca-cert"; do
@@ -194,20 +194,24 @@ jobs:
             if oc get route "${ROUTE_NAME}" &>/dev/null; then
               echo "Route ${ROUTE_NAME} exists. Patching with new cert..."
 
-              # Patch the route with new certificates
-              CERT_DATA=$(cat ${DOMAIN}.pem | sed ':a;N;$!ba;s/\n/\\n/g')
-              KEY_DATA=$(cat ${DOMAIN}.key | sed ':a;N;$!ba;s/\n/\\n/g')
-              CA_DATA=$(cat ${DOMAIN}.ca-cert | sed ':a;N;$!ba;s/\n/\\n/g')
+              # Escape certificate data for JSON
+              CERT_ESC=$(cat "${DOMAIN}.pem" | \
+                sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
+              KEY_ESC=$(cat "${DOMAIN}.key" | \
+                sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
+              CA_ESC=$(cat "${DOMAIN}.ca-cert" | \
+                sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
 
-              oc patch route "${ROUTE_NAME}" -p "{
-                \"spec\": {
-                  \"tls\": {
-                    \"certificate\": \"${CERT_DATA}\",
-                    \"key\": \"${KEY_DATA}\",
-                    \"caCertificate\": \"${CA_DATA}\"
-                  }
-                }
-              }"
+              # Create patch JSON
+              PATCH="{\"spec\":{\"tls\":{\"certificate\":\"${CERT_ESC}\","
+              PATCH="${PATCH}\"key\":\"${KEY_ESC}\","
+              PATCH="${PATCH}\"caCertificate\":\"${CA_ESC}\"}}}"
+              echo "${PATCH}" > /tmp/route-patch.json
+
+              # Apply patch
+              oc patch route "${ROUTE_NAME}" --type=merge \
+                --patch-file=/tmp/route-patch.json
+              rm -f /tmp/route-patch.json
               echo "Route patched successfully"
             else
               # Create the route
