@@ -102,9 +102,10 @@ jobs:
       - name: Prepare certificate files
         id: prepare-certs
         run: |
-          # Create temporary directory for certificate files
-          mkdir -p /tmp/certs
-          cd /tmp/certs
+          # Create temporary directory with random name for security
+          CERT_DIR=$(mktemp -d)
+          echo "CERT_DIR=${CERT_DIR}" >> $GITHUB_ENV
+          cd "${CERT_DIR}"
 
           # Store certificates in environment for proper handling
           # Certificate
@@ -142,7 +143,7 @@ jobs:
         env:
           DOMAIN: ${{ inputs.domain }}
         run: |
-          cd /tmp/certs
+          cd "${CERT_DIR}"
 
           # Create certificate files from environment variables
           printf '%s' "${{ env.CERT_CONTENT }}" > "${DOMAIN}.pem"
@@ -154,9 +155,18 @@ jobs:
           chmod 644 "${DOMAIN}.pem"
           chmod 644 "${DOMAIN}.ca-cert"
 
-          # Verify files were created
+          # Verify files were created and are not empty
           echo "Certificate files created:"
-          ls -l "${DOMAIN}."*
+          ls -lh "${DOMAIN}."*
+
+          # Check file sizes
+          for file in "${DOMAIN}.pem" "${DOMAIN}.key" "${DOMAIN}.ca-cert"; do
+            if [ ! -s "${file}" ]; then
+              echo "Error: ${file} is empty or does not exist"
+              exit 1
+            fi
+          done
+          echo "All certificate files verified (non-empty)"
 
       - name: Create or update route in OpenShift
         # yamllint disable-line rule:line-length
@@ -175,46 +185,62 @@ jobs:
           oc_server: ${{ env.OC_SERVER }}
           commands: |
             # Change to certificate directory
-            cd /tmp/certs
+            cd "${CERT_DIR}"
 
             # Set route name (default if not provided)
             ROUTE_NAME="${ROUTE_NAME:-${SERVICE}-vanity}"
 
             # Check if route already exists
             if oc get route "${ROUTE_NAME}" &>/dev/null; then
-              echo "Route ${ROUTE_NAME} exists. Deleting to recreate..."
-              oc delete route "${ROUTE_NAME}"
-            fi
+              echo "Route ${ROUTE_NAME} exists. Patching with new cert..."
 
-            # Create the route
-            echo "Creating route ${ROUTE_NAME} for service ${SERVICE}"
-            echo "with hostname ${DOMAIN}"
+              # Patch the route with new certificates
+              CERT_DATA=$(cat ${DOMAIN}.pem | sed ':a;N;$!ba;s/\n/\\n/g')
+              KEY_DATA=$(cat ${DOMAIN}.key | sed ':a;N;$!ba;s/\n/\\n/g')
+              CA_DATA=$(cat ${DOMAIN}.ca-cert | sed ':a;N;$!ba;s/\n/\\n/g')
 
-            # Create route with or without path
-            if [ -n "${PATH}" ]; then
-              oc create route edge "${ROUTE_NAME}" \
-                --service="${SERVICE}" \
-                --cert="${DOMAIN}.pem" \
-                --key="${DOMAIN}.key" \
-                --ca-cert="${DOMAIN}.ca-cert" \
-                --hostname="${DOMAIN}" \
-                --path="${PATH}"
+              oc patch route "${ROUTE_NAME}" -p "{
+                \"spec\": {
+                  \"tls\": {
+                    \"certificate\": \"${CERT_DATA}\",
+                    \"key\": \"${KEY_DATA}\",
+                    \"caCertificate\": \"${CA_DATA}\"
+                  }
+                }
+              }"
+              echo "Route patched successfully"
             else
-              oc create route edge "${ROUTE_NAME}" \
-                --service="${SERVICE}" \
-                --cert="${DOMAIN}.pem" \
-                --key="${DOMAIN}.key" \
-                --ca-cert="${DOMAIN}.ca-cert" \
-                --hostname="${DOMAIN}"
+              # Create the route
+              echo "Creating route ${ROUTE_NAME} for service ${SERVICE}"
+              echo "with hostname ${DOMAIN}"
+
+              # Create route with or without path
+              if [ -n "${PATH}" ]; then
+                oc create route edge "${ROUTE_NAME}" \
+                  --service="${SERVICE}" \
+                  --cert="${DOMAIN}.pem" \
+                  --key="${DOMAIN}.key" \
+                  --ca-cert="${DOMAIN}.ca-cert" \
+                  --hostname="${DOMAIN}" \
+                  --path="${PATH}"
+              else
+                oc create route edge "${ROUTE_NAME}" \
+                  --service="${SERVICE}" \
+                  --cert="${DOMAIN}.pem" \
+                  --key="${DOMAIN}.key" \
+                  --ca-cert="${DOMAIN}.ca-cert" \
+                  --hostname="${DOMAIN}"
+              fi
+              echo "Route created successfully"
             fi
 
-            # Verify route was created
-            echo "Route created successfully:"
+            # Verify route state
+            echo "Current route configuration:"
             oc get route "${ROUTE_NAME}" -o yaml
 
       - name: Cleanup certificate files
         if: always()
         run: |
-          # Remove certificate files
-          rm -rf /tmp/certs
+          # Remove certificate files from random directory
+          rm -rf "${CERT_DIR}"
           echo "Certificate files cleaned up"
