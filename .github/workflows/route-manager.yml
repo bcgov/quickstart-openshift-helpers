@@ -102,22 +102,48 @@ jobs:
       - name: Prepare certificate files
         id: prepare-certs
         run: |
-          # Mask sensitive data in logs
-          CERT="${{ inputs.certificate || secrets.certificate }}"
-          PKEY="${{ inputs.private_key || secrets.private_key }}"
-          CACERT="${{ inputs.ca_certificate || secrets.ca_certificate }}"
-          echo "::add-mask::${CERT}"
-          echo "::add-mask::${PKEY}"
-          echo "::add-mask::${CACERT}"
-
           # Create temporary directory for certificate files
           mkdir -p /tmp/certs
           cd /tmp/certs
 
-          # Create certificate files from inputs/secrets
-          echo "${CERT}" > "${{ inputs.domain }}.pem"
-          echo "${PKEY}" > "${{ inputs.domain }}.key"
-          echo "${CACERT}" > "${{ inputs.domain }}.ca-cert"
+          # Store certificates in environment for proper handling
+          # Certificate
+          echo "CERT_CONTENT<<EOF" >> $GITHUB_ENV
+          echo "${{ inputs.certificate || secrets.certificate }}" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+          # Private key
+          echo "KEY_CONTENT<<EOF" >> $GITHUB_ENV
+          echo "${{ inputs.private_key || secrets.private_key }}" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+          # CA certificate
+          echo "CA_CONTENT<<EOF" >> $GITHUB_ENV
+          CA_CERT="${{ inputs.ca_certificate || secrets.ca_certificate }}"
+          echo "${CA_CERT}" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+          # Mask sensitive content line by line
+          while IFS= read -r line; do
+            [[ -n "$line" ]] && echo "::add-mask::$line"
+          done <<< "${{ inputs.private_key || secrets.private_key }}"
+
+          while IFS= read -r line; do
+            [[ -n "$line" ]] && echo "::add-mask::$line"
+          done <<< "${{ inputs.certificate || secrets.certificate }}"
+
+          while IFS= read -r line; do
+            [[ -n "$line" ]] && echo "::add-mask::$line"
+          done <<< "${{ inputs.ca_certificate || secrets.ca_certificate }}"
+
+      - name: Create certificate files
+        run: |
+          cd /tmp/certs
+
+          # Create certificate files from environment variables
+          printf '%s\n' "${{ env.CERT_CONTENT }}" > "${{ inputs.domain }}.pem"
+          printf '%s\n' "${{ env.KEY_CONTENT }}" > "${{ inputs.domain }}.key"
+          printf '%s\n' "${{ env.CA_CONTENT }}" > "${{ inputs.domain }}.ca-cert"
 
           # Set secure permissions
           chmod 600 "${{ inputs.domain }}.key"
@@ -129,7 +155,8 @@ jobs:
           ls -l "${{ inputs.domain }}".*
 
       - name: Create or update route in OpenShift
-        uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0
+        # yamllint disable-line rule:line-length
+        uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0  # v1.3.0
         env:
           OC_TOKEN: ${{ inputs.oc_token || secrets.oc_token }}
           OC_SERVER: ${{ inputs.oc_server }}
@@ -156,20 +183,11 @@ jobs:
             fi
 
             # Create the route
-            HOST="${DOMAIN}"
             echo "Creating route ${ROUTE_NAME} for service ${SERVICE}"
-            echo "with hostname ${HOST}"
+            echo "with hostname ${DOMAIN}"
 
-            if [ -z "${PATH}" ]; then
-              # Create route without path
-              oc create route edge "${ROUTE_NAME}" \
-                --service="${SERVICE}" \
-                --cert="${DOMAIN}.pem" \
-                --key="${DOMAIN}.key" \
-                --ca-cert="${DOMAIN}.ca-cert" \
-                --hostname="${DOMAIN}"
-            else
-              # Create route with path
+            # Create route with or without path
+            if [ -n "${PATH}" ]; then
               oc create route edge "${ROUTE_NAME}" \
                 --service="${SERVICE}" \
                 --cert="${DOMAIN}.pem" \
@@ -177,6 +195,13 @@ jobs:
                 --ca-cert="${DOMAIN}.ca-cert" \
                 --hostname="${DOMAIN}" \
                 --path="${PATH}"
+            else
+              oc create route edge "${ROUTE_NAME}" \
+                --service="${SERVICE}" \
+                --cert="${DOMAIN}.pem" \
+                --key="${DOMAIN}.key" \
+                --ca-cert="${DOMAIN}.ca-cert" \
+                --hostname="${DOMAIN}"
             fi
 
             # Verify route was created
