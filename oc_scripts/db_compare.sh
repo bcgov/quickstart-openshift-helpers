@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Strict mode: exit on error, unset vars, or failed pipes
+set -euo pipefail
+
+# Usage
+if [[ $# -lt 2 ]]; then
+  grep -v '^#!' "$0" | awk '/^#/ { sub(/^# ?/, ""); print; next } NF==0 { exit }'
+  exit 1
+fi
+
 # Set these to your actual deployment names
 SOURCE_DEPLOYMENT="source-db"
 TARGET_DEPLOYMENT="target-db"
