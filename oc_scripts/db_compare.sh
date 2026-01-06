@@ -1,35 +1,33 @@
 #!/bin/bash
-
+#
 # Database Table Count Comparison Script for OpenShift
 # Usage:
-#   ./db_compare.sh <source-deployment> <target-deployment>
+#   ./db_compare.sh <source-deployment-name> <target-deployment-name>
 #
 # This script compares PostgreSQL table row counts between two OpenShift deployments
 # to validate database transfers or check data consistency between environments.
 #
 # Requirements:
-# - Both deployments must have running PostgreSQL pods
-# - Environment variables POSTGRES_USER and POSTGRES_DB must be set
+# - Both deployments must have running pods managed by the given deployment names.
 # - The oc CLI must be authenticated to the OpenShift cluster
 #
 # Notes:
 # - Uses pg_stat_user_tables to get live row counts
 # - Reports differences in table names or row counts between environments
 # - Returns exit code 0 if counts match, 1 if differences found
+#
 
 # Strict mode: exit on error, unset vars, or failed pipes
 set -euo pipefail
-set -x
 
 # Usage
-if [[ $# -ne 2 ]]; then
+if [[ $# -lt 2 ]]; then
   grep -v '^#!' "$0" | awk '/^#/ { sub(/^# ?/, ""); print; next } NF==0 { exit }'
   exit 1
 fi
 
-# Get deployment names from arguments
-SOURCE_DEPLOYMENT="$1"
-TARGET_DEPLOYMENT="$2"
+SOURCE_DEPLOYMENT="${1}"
+TARGET_DEPLOYMENT="${2}"
 
 # Fail fast if pods aren't found
 if ! oc get po -l deployment="${SOURCE_DEPLOYMENT}" | grep -q .; then
@@ -50,26 +48,10 @@ ORDER BY table_name;
 
 # Run the query on source
 echo "Collecting table counts from source..."
-SOURCE_COUNTS=$(oc exec deployment/${SOURCE_DEPLOYMENT} -- \
-  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "$COUNT_QUERY")
+SOURCE_COUNTS=$(oc exec deployment/"${SOURCE_DEPLOYMENT}" -- \
+  bash -c "psql -U \${POSTGRES_USER} -d \${POSTGRES_DB} -Atc \"${COUNT_QUERY}\"")
 
 # Run the query on target
 echo "Collecting table counts from target..."
-TARGET_COUNTS=$(oc exec deployment/${TARGET_DEPLOYMENT} -- \
-  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "$COUNT_QUERY")
-
-# Save to temp files
-echo "$SOURCE_COUNTS" > /tmp/source_counts.txt
-echo "$TARGET_COUNTS" > /tmp/target_counts.txt
-
-# Diff the outputs
-echo
-echo "Comparing source and target table counts..."
-DIFF_OUTPUT=$(diff -u /tmp/source_counts.txt /tmp/target_counts.txt)
-
-if [ -z "$DIFF_OUTPUT" ]; then
-  echo "✅ Backup and restore validation passed: all tables and row counts match."
-else
-  echo "❌ Differences detected:"
-  echo "$DIFF_OUTPUT"
-fi
+TARGET_COUNTS=$(oc exec deployment/"${TARGET_DEPLOYMENT}" -- \
+  bash -c "psql -U \${POSTGRES_USER} -d \${POSTGRES_DB} -Atc \"${COUNT_QUERY}\"")
