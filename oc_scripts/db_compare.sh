@@ -14,7 +14,7 @@
 # Notes:
 # - Uses pg_stat_user_tables to get live row counts
 # - Reports differences in table names or row counts between environments
-# - Returns exit code 0 if counts match, 1 if differences found
+# - Reports differences but always exits successfully (informational only)
 #
 
 # Strict mode: exit on error, unset vars, or failed pipes
@@ -48,13 +48,21 @@ ORDER BY table_name;
 
 # Run the query on source
 echo "Collecting table counts from source..."
-SOURCE_COUNTS=$(oc exec deployment/"${SOURCE_DEPLOYMENT}" -- \
-  bash -c "psql -U \${POSTGRES_USER} -d \${POSTGRES_DB} -Atc \"${COUNT_QUERY}\"")
+if ! SOURCE_COUNTS=$(oc exec deployment/"${SOURCE_DEPLOYMENT}" -- \
+  bash -c "psql -U \${POSTGRES_USER} -d \${POSTGRES_DB} -Atc \"${COUNT_QUERY}\"" 2>&1); then
+  echo "Error: Failed to query source deployment '${SOURCE_DEPLOYMENT}'"
+  echo "$SOURCE_COUNTS"
+  exit 3
+fi
 
 # Run the query on target
 echo "Collecting table counts from target..."
-TARGET_COUNTS=$(oc exec deployment/"${TARGET_DEPLOYMENT}" -- \
-  bash -c "psql -U \${POSTGRES_USER} -d \${POSTGRES_DB} -Atc \"${COUNT_QUERY}\"")
+if ! TARGET_COUNTS=$(oc exec deployment/"${TARGET_DEPLOYMENT}" -- \
+  bash -c "psql -U \${POSTGRES_USER} -d \${POSTGRES_DB} -Atc \"${COUNT_QUERY}\"" 2>&1); then
+  echo "Error: Failed to query target deployment '${TARGET_DEPLOYMENT}'"
+  echo "$TARGET_COUNTS"
+  exit 4
+fi
 
 # Show table counts from each database
 echo
