@@ -46,10 +46,50 @@ After receiving certificates from your administrators (via JIRA response), you n
 
 ### Installation Steps
 
+#### Option 1: Manual Installation (CLI)
+
 1. Ensure all required files are prepared with correct naming (see above)
 2. Login to [OpenShift](https://console.apps.silver.devops.gov.bc.ca/k8s/cluster/projects)
 3. Switch to the appropriate namespace: `oc project <namespace>`
 4. Install the certificate using `./install_cert.sh`
+
+#### Option 2: Automated Installation (GitHub Workflow)
+
+You can use GitHub Actions to manage routes automatically from GitHub secrets. This approach is useful for:
+- Updating certificates without manual CLI access
+- Automating certificate renewals
+- Managing multiple environments consistently
+
+**Setup:**
+1. Store your certificates as GitHub secrets:
+   - `CERTIFICATE` - End-entity certificate (.pem file content)
+   - `PRIVATE_KEY` - Private key (.key file content)
+   - `CA_CERTIFICATE` - CA certificate chain (.ca-cert file content)
+   - `OC_TOKEN` - OpenShift token
+   - `OC_NAMESPACE` - OpenShift namespace
+
+2. Use the workflow in your repository:
+
+```yaml
+jobs:
+  update-route:
+    name: Update Route
+    uses: bcgov/quickstart-openshift-helpers/.github/workflows/route-manager.yml@vX.Y.Z
+    secrets:
+      oc_token: ${{ secrets.OC_TOKEN }}
+      oc_namespace: ${{ secrets.OC_NAMESPACE }}
+      certificate: ${{ secrets.CERTIFICATE }}
+      private_key: ${{ secrets.PRIVATE_KEY }}
+      ca_certificate: ${{ secrets.CA_CERTIFICATE }}
+    with:
+      domain: example.nrs.gov.bc.ca
+      service: my-app-prod-frontend
+      path: ""  # Optional: leave empty for root path
+      oc_server: https://api.silver.devops.gov.bc.ca:6443
+```
+
+**Manual Trigger:**
+You can also trigger the route manager directly from the GitHub Actions UI using `workflow_dispatch` by providing all required inputs.
 
 ## Reinstall and Renewals
 
@@ -62,7 +102,7 @@ For certificate renewals, you need:
 - `<DOMAIN>.key` - Private key (required - must match the original certificate)
 - `<DOMAIN>.csr` - Certificate signing request (recommended to retain, but you can generate a new one using the same private key)
 
-Use `./install_cert.sh` as required for reinstallation or after renewals.
+Use `./install_cert.sh` for manual reinstallation or after renewals, or use the GitHub workflow approach (see Installation Steps above) for automated updates.
 
 
 ## Reference

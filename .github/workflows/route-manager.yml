@@ -1,0 +1,191 @@
+---
+name: Route Manager
+on:
+  workflow_call:
+    secrets:
+      oc_token:
+        description: "OpenShift token"
+        required: true
+      oc_namespace:
+        description: "OpenShift namespace"
+        required: true
+      certificate:
+        description: "Certificate content (.pem file)"
+        required: true
+      private_key:
+        description: "Private key content (.key file)"
+        required: true
+      ca_certificate:
+        description: "CA certificate content (.ca-cert file)"
+        required: true
+
+    inputs:
+      domain:
+        description: "Fully qualified domain name (FQDN) for the route"
+        required: true
+        type: string
+      service:
+        description: "OpenShift service name to expose"
+        required: true
+        type: string
+      path:
+        description: "Optional path/subdir for the route (e.g., /api)"
+        required: false
+        default: ""
+        type: string
+      oc_server:
+        description: "OpenShift server"
+        required: false
+        default: "https://api.silver.devops.gov.bc.ca:6443"
+        type: string
+      route_name:
+        description: "Custom route name (defaults to <service>-vanity)"
+        required: false
+        default: ""
+        type: string
+
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: "Fully qualified domain name (FQDN) for the route"
+        required: true
+        type: string
+      service:
+        description: "OpenShift service name to expose"
+        required: true
+        type: string
+      path:
+        description: "Optional path/subdir for the route (e.g., /api)"
+        required: false
+        default: ""
+        type: string
+      certificate:
+        description: "Certificate content (.pem file)"
+        required: true
+        type: string
+      private_key:
+        description: "Private key content (.key file)"
+        required: true
+        type: string
+      ca_certificate:
+        description: "CA certificate content (.ca-cert file)"
+        required: true
+        type: string
+      oc_token:
+        description: "OpenShift token"
+        required: true
+        type: string
+      oc_namespace:
+        description: "OpenShift namespace"
+        required: true
+        type: string
+      oc_server:
+        description: "OpenShift server"
+        required: false
+        default: "https://api.silver.devops.gov.bc.ca:6443"
+        type: string
+      route_name:
+        description: "Custom route name (defaults to <service>-vanity)"
+        required: false
+        default: ""
+        type: string
+
+permissions: {}
+
+jobs:
+  manage-route:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Prepare certificate files
+        id: prepare-certs
+        run: |
+          # Mask sensitive data in logs
+          CERT="${{ inputs.certificate || secrets.certificate }}"
+          PKEY="${{ inputs.private_key || secrets.private_key }}"
+          CACERT="${{ inputs.ca_certificate || secrets.ca_certificate }}"
+          echo "::add-mask::${CERT}"
+          echo "::add-mask::${PKEY}"
+          echo "::add-mask::${CACERT}"
+
+          # Create temporary directory for certificate files
+          mkdir -p /tmp/certs
+          cd /tmp/certs
+
+          # Create certificate files from inputs/secrets
+          echo "${CERT}" > "${{ inputs.domain }}.pem"
+          echo "${PKEY}" > "${{ inputs.domain }}.key"
+          echo "${CACERT}" > "${{ inputs.domain }}.ca-cert"
+
+          # Set secure permissions
+          chmod 600 "${{ inputs.domain }}.key"
+          chmod 644 "${{ inputs.domain }}.pem"
+          chmod 644 "${{ inputs.domain }}.ca-cert"
+
+          # Verify files were created
+          echo "Certificate files created:"
+          ls -l "${{ inputs.domain }}".*
+
+      - name: Create or update route in OpenShift
+        uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0
+        env:
+          OC_TOKEN: ${{ inputs.oc_token || secrets.oc_token }}
+          OC_SERVER: ${{ inputs.oc_server }}
+          OC_NAMESPACE: ${{ inputs.oc_namespace || secrets.oc_namespace }}
+          DOMAIN: ${{ inputs.domain }}
+          SERVICE: ${{ inputs.service }}
+          PATH: ${{ inputs.path }}
+          ROUTE_NAME: ${{ inputs.route_name }}
+        with:
+          oc_namespace: ${{ env.OC_NAMESPACE }}
+          oc_token: ${{ env.OC_TOKEN }}
+          oc_server: ${{ env.OC_SERVER }}
+          commands: |
+            # Change to certificate directory
+            cd /tmp/certs
+
+            # Set route name (default if not provided)
+            ROUTE_NAME="${ROUTE_NAME:-${SERVICE}-vanity}"
+
+            # Check if route already exists
+            if oc get route "${ROUTE_NAME}" &>/dev/null; then
+              echo "Route ${ROUTE_NAME} exists. Deleting to recreate..."
+              oc delete route "${ROUTE_NAME}"
+            fi
+
+            # Create the route
+            HOST="${DOMAIN}"
+            echo "Creating route ${ROUTE_NAME} for service ${SERVICE}"
+            echo "with hostname ${HOST}"
+
+            if [ -z "${PATH}" ]; then
+              # Create route without path
+              oc create route edge "${ROUTE_NAME}" \
+                --service="${SERVICE}" \
+                --cert="${DOMAIN}.pem" \
+                --key="${DOMAIN}.key" \
+                --ca-cert="${DOMAIN}.ca-cert" \
+                --hostname="${DOMAIN}"
+            else
+              # Create route with path
+              oc create route edge "${ROUTE_NAME}" \
+                --service="${SERVICE}" \
+                --cert="${DOMAIN}.pem" \
+                --key="${DOMAIN}.key" \
+                --ca-cert="${DOMAIN}.ca-cert" \
+                --hostname="${DOMAIN}" \
+                --path="${PATH}"
+            fi
+
+            # Verify route was created
+            echo "Route created successfully:"
+            oc get route "${ROUTE_NAME}" -o yaml
+
+      - name: Cleanup certificate files
+        if: always()
+        run: |
+          # Remove certificate files
+          rm -rf /tmp/certs
+          echo "Certificate files cleaned up"
