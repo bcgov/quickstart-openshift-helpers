@@ -55,3 +55,45 @@ SOURCE_COUNTS=$(oc exec deployment/"${SOURCE_DEPLOYMENT}" -- \
 echo "Collecting table counts from target..."
 TARGET_COUNTS=$(oc exec deployment/"${TARGET_DEPLOYMENT}" -- \
   bash -c "psql -U \${POSTGRES_USER} -d \${POSTGRES_DB} -Atc \"${COUNT_QUERY}\"")
+
+# Show table counts from each database
+echo
+echo "Comparing source and target table counts..."
+echo
+echo "Source (${SOURCE_DEPLOYMENT}):"
+echo "$SOURCE_COUNTS" | head -20
+SOURCE_TOTAL=$(echo "$SOURCE_COUNTS" | wc -l)
+echo "... ($SOURCE_TOTAL tables total)"
+
+echo
+echo "Target (${TARGET_DEPLOYMENT}):"
+echo "$TARGET_COUNTS" | head -20
+TARGET_TOTAL=$(echo "$TARGET_COUNTS" | wc -l)
+echo "... ($TARGET_TOTAL tables total)"
+
+# Diff the outputs using process substitution
+DIFF_OUTPUT=$(diff -u <(echo "$SOURCE_COUNTS") <(echo "$TARGET_COUNTS"))
+
+echo
+echo "--- Comparison Result ---"
+
+if [ -z "$DIFF_OUTPUT" ]; then
+  echo "✅ All tables and row counts match."
+  exit 0
+else
+  echo "❌ Differences detected:"
+  echo "$DIFF_OUTPUT"
+  echo
+  
+  # Parse diff for added/removed/changed tables
+  ADDED=$(echo "$DIFF_OUTPUT" | grep '^+[^+]' | grep -v '^+++' | wc -l)
+  REMOVED=$(echo "$DIFF_OUTPUT" | grep '^-[^-]' | grep -v '^---' | wc -l)
+  MODIFIED=$(echo "$DIFF_OUTPUT" | grep '^[-+].*[0-9]$' | grep -v '^---' | grep -v '^+++' | wc -l)
+  
+  echo "--- Summary ---"
+  echo "Tables added in target: $ADDED"
+  echo "Tables missing in target: $REMOVED"
+  echo "Tables with row count differences: $MODIFIED"
+  
+  exit 1
+fi
