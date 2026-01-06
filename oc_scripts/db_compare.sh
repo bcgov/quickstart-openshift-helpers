@@ -26,9 +26,15 @@ if [[ $# -lt 2 ]]; then
   exit 1
 fi
 
-# Set these to your actual deployment names
-SOURCE_DEPLOYMENT="source-db"
-TARGET_DEPLOYMENT="target-db"
+# Usage
+if [[ $# -ne 2 ]]; then
+  grep -v '^#!' "$0" | awk '/^#/ { sub(/^# ?/, ""); print; next } NF==0 { exit }'
+  exit 1
+fi
+
+# Get deployment names from arguments
+SOURCE_DEPLOYMENT="$1"
+TARGET_DEPLOYMENT="$2"
 
 # Query to get table names and row counts
 COUNT_QUERY="
