@@ -30,11 +30,11 @@ SOURCE_DEPLOYMENT="${1}"
 TARGET_DEPLOYMENT="${2}"
 
 # Fail fast if pods aren't found
-if ! oc get po -l deployment="${SOURCE_DEPLOYMENT}" | grep -q .; then
+if ! oc get po -l deployment="${SOURCE_DEPLOYMENT}" --no-headers -o name | grep -q .; then
   echo "No pods found for deployment '${SOURCE_DEPLOYMENT}'."
   exit 2
 fi
-if ! oc get po -l deployment="${TARGET_DEPLOYMENT}" | grep -q .; then
+if ! oc get po -l deployment="${TARGET_DEPLOYMENT}" --no-headers -o name | grep -q .; then
   echo "No pods found for deployment '${TARGET_DEPLOYMENT}'."
   exit 2
 fi
