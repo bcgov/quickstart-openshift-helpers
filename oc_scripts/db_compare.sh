@@ -71,29 +71,16 @@ echo "$TARGET_COUNTS" | head -20
 TARGET_TOTAL=$(echo "$TARGET_COUNTS" | wc -l)
 echo "... ($TARGET_TOTAL tables total)"
 
-# Diff the outputs using process substitution
-DIFF_OUTPUT=$(diff -u <(echo "$SOURCE_COUNTS") <(echo "$TARGET_COUNTS"))
+# Diff and summarize
+DIFF_OUTPUT=$(diff -u <(echo "$SOURCE_COUNTS") <(echo "$TARGET_COUNTS") || true)
 
 echo
 echo "--- Comparison Result ---"
 
 if [ -z "$DIFF_OUTPUT" ]; then
-  echo "✅ All tables and row counts match."
-  exit 0
+  echo "✅ $SOURCE_TOTAL tables match $TARGET_TOTAL tables"
 else
-  echo "❌ Differences detected:"
+  echo "❌ Differences found:"
   echo "$DIFF_OUTPUT"
-  echo
-  
-  # Parse diff for added/removed/changed tables
-  ADDED=$(echo "$DIFF_OUTPUT" | grep '^+[^+]' | grep -v '^+++' | wc -l)
-  REMOVED=$(echo "$DIFF_OUTPUT" | grep '^-[^-]' | grep -v '^---' | wc -l)
-  MODIFIED=$(echo "$DIFF_OUTPUT" | grep '^[-+].*[0-9]$' | grep -v '^---' | grep -v '^+++' | wc -l)
-  
-  echo "--- Summary ---"
-  echo "Tables added in target: $ADDED"
-  echo "Tables missing in target: $REMOVED"
-  echo "Tables with row count differences: $MODIFIED"
-  
   exit 1
 fi
