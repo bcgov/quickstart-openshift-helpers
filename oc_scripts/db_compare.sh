@@ -1,5 +1,22 @@
 #!/bin/bash
 
+# Database Table Count Comparison Script for OpenShift
+# Usage:
+#   ./db_compare.sh <source-deployment> <target-deployment>
+#
+# This script compares PostgreSQL table row counts between two OpenShift deployments
+# to validate database transfers or check data consistency between environments.
+#
+# Requirements:
+# - Both deployments must have running PostgreSQL pods
+# - Environment variables POSTGRES_USER and POSTGRES_DB must be set
+# - The oc CLI must be authenticated to the OpenShift cluster
+#
+# Notes:
+# - Uses pg_stat_user_tables to get live row counts
+# - Reports differences in table names or row counts between environments
+# - Returns exit code 0 if counts match, 1 if differences found
+
 # Strict mode: exit on error, unset vars, or failed pipes
 set -euo pipefail
 
