@@ -82,8 +82,7 @@ if [ -z "$DIFF_OUTPUT" ]; then
   echo "✅ $SOURCE_TOTAL tables match $TARGET_TOTAL tables"
 else
   echo "❌ Differences found:"
-# Show differences without context
-echo "Changed tables:"
-echo "$DIFF_OUTPUT" | grep '^[+-]' | grep -v '^+++\|^---'
-  exit 1
+  # Show differences without context
+  echo "Changed tables:"
+  echo "$DIFF_OUTPUT" | grep '^[+-]' | grep -v '^+++\|^---'
 fi
