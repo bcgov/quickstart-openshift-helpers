@@ -1,0 +1,64 @@
+name: Nightly Helm Cleanup QSOS (Dev and Test)
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: helm-cleanup-${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  helm-uninstall-all:
+    name: Helm uninstall all (${{ matrix.environment }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        environment:
+          - qsos-dev
+          - qsos-test
+
+    # Use GitHub Environments so `secrets.*` / `vars.*` resolve per-environment.
+    environment: ${{ matrix.environment }}
+
+    steps:
+      - name: Login to cluster and uninstall Helm releases
+        uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0 # v1.3.0
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ vars.oc_server }}
+          commands: |
+            set -euo pipefail
+
+            ns="${{ secrets.oc_namespace }}"
+            echo "Target namespace: ${ns}"
+
+            if ! command -v helm >/dev/null 2>&1; then
+              echo "ERROR: 'helm' is not available on this runner. Install helm in the runner image or extend this workflow to install it at runtime." >&2
+              exit 1
+            fi
+
+            echo "Helm releases in ${ns}:"
+            helm ls -n "${ns}" || true
+
+            releases="$(helm ls -n "${ns}" -q || true)"
+            if [ -z "${releases}" ]; then
+              echo "No Helm releases found in ${ns}. Nothing to uninstall."
+              exit 0
+            fi
+
+            echo "Uninstalling releases:"
+            echo "${releases}"
+
+            while IFS= read -r release; do
+              [ -n "${release}" ] || continue
+              echo "Uninstalling ${release}..."
+              helm uninstall "${release}" -n "${ns}" --wait --timeout 10m
+            done <<< "${releases}"
+            echo "Cleanup complete."
