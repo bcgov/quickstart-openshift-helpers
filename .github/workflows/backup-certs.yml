@@ -1,0 +1,112 @@
+name: Backup Route Certificates to Secrets
+on:
+  workflow_call:
+    secrets:
+      oc_token:
+        description: "OpenShift token"
+        required: true
+      oc_namespace:
+        description: "OpenShift namespace"
+        required: true
+
+    inputs:
+      route:
+        description: "Specific route name to backup (optional, backs up all routes if not specified)"
+        required: false
+        default: ""
+        type: string
+      label:
+        description: "Label selector to filter routes (optional, e.g., 'app=myapp')"
+        required: false
+        default: ""
+        type: string
+      prefix:
+        description: "Prefix for backup secret names"
+        required: false
+        default: "backup"
+        type: string
+      oc_server:
+        description: "OpenShift server"
+        required: false
+        default: "https://api.silver.devops.gov.bc.ca:6443"
+        type: string
+
+  workflow_dispatch:
+    inputs:
+      route:
+        description: "Specific route name to backup (optional, backs up all routes if not specified)"
+        required: false
+        default: ""
+        type: string
+      label:
+        description: "Label selector to filter routes (optional, e.g., 'app=myapp')"
+        required: false
+        default: ""
+        type: string
+      prefix:
+        description: "Prefix for backup secret names"
+        required: false
+        default: "backup"
+        type: string
+      oc_token:
+        description: "OpenShift token"
+        required: true
+        type: string
+      oc_namespace:
+        description: "OpenShift namespace"
+        required: true
+        type: string
+      oc_server:
+        description: "OpenShift server"
+        required: false
+        default: "https://api.silver.devops.gov.bc.ca:6443"
+        type: string
+
+  schedule:
+    # Run daily at 2 AM UTC (example schedule)
+    - cron: '0 2 * * *'
+
+permissions: {}
+
+jobs:
+  backup-certificates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Make script executable
+        run: chmod +x ./cert-setup/backup_certs.sh
+
+      - name: Backup certificates to secrets
+        uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0 # v1.3.0
+        env:
+          OC_TOKEN: ${{ inputs.oc_token || secrets.oc_token }}
+          OC_SERVER: ${{ inputs.oc_server }}
+          OC_NAMESPACE: ${{ inputs.oc_namespace || secrets.oc_namespace }}
+        with:
+          oc_namespace: ${{ env.OC_NAMESPACE }}
+          oc_token: ${{ env.OC_TOKEN }}
+          oc_server: ${{ env.OC_SERVER }}
+          commands: |
+            # Copy script to workspace
+            cp ./cert-setup/backup_certs.sh /tmp/backup_certs.sh
+            chmod +x /tmp/backup_certs.sh
+            
+            # Build command arguments array
+            ARGS=()
+            
+            if [[ -n "${{ inputs.route }}" ]]; then
+              ARGS+=("--route" "${{ inputs.route }}")
+            fi
+            
+            if [[ -n "${{ inputs.label }}" ]]; then
+              ARGS+=("--label" "${{ inputs.label }}")
+            fi
+            
+            if [[ -n "${{ inputs.prefix }}" ]]; then
+              ARGS+=("--prefix" "${{ inputs.prefix }}")
+            fi
+            
+            # Run backup script with arguments
+            /tmp/backup_certs.sh "${ARGS[@]}"
