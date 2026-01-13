@@ -16,6 +16,7 @@ jobs:
   helm-uninstall-all:
     name: Helm uninstall all (${{ matrix.environment }})
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
