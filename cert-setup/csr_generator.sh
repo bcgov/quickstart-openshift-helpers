@@ -98,11 +98,32 @@ SUBJECT="/C=CA/ST=British Columbia/L=Victoria/O=Government of the Province of Br
 echo -e "\nSubject: $SUBJECT"
 
 # Accept or create a new subject only in interactive mode
+USE_SUBJECT="true"
 if [[ "$INTERACTIVE" = true ]]; then
   echo "Accept subject? [y/n]"
   read ACCEPT
   if [[ ! "${ACCEPT}" =~ [Yy] ]]; then
-    echo "Subject: " && read SUBJECT
+    echo "Enter custom subject (leave blank to skip): "
+    while true; do
+      read CUSTOM_SUBJECT
+      # Trim whitespace
+      CUSTOM_SUBJECT_TRIMMED="$(echo "${CUSTOM_SUBJECT}" | xargs)"
+      
+      # If empty after trimming, skip subject (let OpenSSL prompt)
+      if [[ -z "${CUSTOM_SUBJECT_TRIMMED}" ]]; then
+        USE_SUBJECT="false"
+        break
+      fi
+      
+      # Validate OpenSSL subject format: /key=value/key=value/...
+      if [[ "${CUSTOM_SUBJECT_TRIMMED}" =~ ^/.*=.* ]]; then
+        SUBJECT="${CUSTOM_SUBJECT_TRIMMED}"
+        break
+      else
+        echo "Invalid subject format. Must be like: /C=CA/ST=State/O=Org/CN=domain.com"
+        echo "Enter custom subject (leave blank to skip): "
+      fi
+    done
   fi
 fi
 
@@ -110,13 +131,21 @@ fi
 if [[ -n "${PRIVATE_KEY}" ]]; then
   echo -e "\nUsing existing private key: ${PRIVATE_KEY}"
   # Generate CSR using existing private key
-  openssl req -new -key "${PRIVATE_KEY}" -out "${DOMAIN}.csr" -subj "${SUBJECT}"
+  if [[ "$USE_SUBJECT" = "true" ]]; then
+    openssl req -new -key "${PRIVATE_KEY}" -out "${DOMAIN}.csr" -subj "${SUBJECT}"
+  else
+    openssl req -new -key "${PRIVATE_KEY}" -out "${DOMAIN}.csr"
+  fi
   echo -e "CSR generated successfully using existing private key"
   echo -e "The following has been created:"
   ls -l "${DOMAIN}.csr"
 else
   # Generate new key pair and CSR
-  openssl req -new -newkey rsa:2048 -nodes -keyout "${DOMAIN}.key" -out "${DOMAIN}.csr" -subj "${SUBJECT}"
+  if [[ "$USE_SUBJECT" = "true" ]]; then
+    openssl req -new -newkey rsa:2048 -nodes -keyout "${DOMAIN}.key" -out "${DOMAIN}.csr" -subj "${SUBJECT}"
+  else
+    openssl req -new -newkey rsa:2048 -nodes -keyout "${DOMAIN}.key" -out "${DOMAIN}.csr"
+  fi
   echo -e "New private key and CSR generated successfully"
   echo -e "The following have been created:"
   ls -l "${DOMAIN}."{csr,key}
@@ -152,6 +181,6 @@ if [[ "$INTERACTIVE" = true ]]; then
   echo -e "\nWould you like to be redirected to Natural Resources JIRA? [y/n]"
   read ACCEPT
   if [[ "${ACCEPT}" =~ [Yy] ]]; then
-    xdg-open 'https://apps.nrs.gov.bc.ca/int/jira/secure/CreateIssue!default.jspa'
+    xdg-open 'https://apps.nrs.gov.bc.ca/int/jira/secure/CreateIssue!default.jspa' 2>/dev/null
   fi
 fi
