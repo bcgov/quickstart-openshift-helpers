@@ -1,5 +1,12 @@
 # Setting Up a Vanity or Custom URL
 
+## Table of Contents
+- [Generating a Request](#generating-a-request)
+- [Installing the Certificate](#installing-the-certificate)
+- [Backing Up Certificates](#backing-up-certificates)
+- [Reinstall and Renewals](#reinstall-and-renewals)
+- [Reference](#reference)
+
 ## Generating a Request
 
 Ticketing and administrative steps are for the Natural Resources only.  Other ministries will have their own processes.
@@ -50,6 +57,122 @@ After receiving certificates from your administrators (via JIRA response), you n
 2. Login to [OpenShift](https://console.apps.silver.devops.gov.bc.ca/k8s/cluster/projects)
 3. Switch to the appropriate namespace: `oc project <namespace>`
 4. Install the certificate using `./install_cert.sh`
+
+## Backing Up Certificates
+
+Route certificates can be lost if routes are accidentally deleted. To protect against this, you can back up your route certificates to OpenShift secrets.
+
+### Manual Backup
+
+Use the `backup_certs.sh` script to manually back up certificates from routes to secrets:
+
+```bash
+# Backup all routes in the current namespace
+./backup_certs.sh
+
+# Backup a specific route
+./backup_certs.sh --route myapp-vanity
+
+# Backup routes matching a label
+./backup_certs.sh --label "app=myapp"
+
+# Use a custom prefix for backup secrets (default is "backup")
+./backup_certs.sh --prefix "cert-backup"
+
+# Preview what would be backed up (dry run)
+./backup_certs.sh --dry-run
+```
+
+The script will create secrets named `<prefix>-<route-name>-tls` containing:
+- `tls.crt` - The certificate
+- `tls.key` - The private key
+- `ca.crt` - The CA certificate (if present)
+- `destination-ca.crt` - The destination CA certificate (if present for re-encrypt routes)
+
+Each backup secret includes annotations tracking the source route, backup timestamp, and TLS termination type.
+
+### Automated Scheduled Backups
+
+#### Option 1: GitHub Actions Workflow
+
+Use the reusable workflow to schedule automated backups via GitHub Actions:
+
+```yaml
+name: Scheduled Certificate Backup
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    uses: bcgov/quickstart-openshift-helpers/.github/workflows/backup-certs.yml@v1.0.0
+    secrets:
+      oc_token: ${{ secrets.OC_TOKEN }}
+      oc_namespace: ${{ secrets.OC_NAMESPACE }}
+    with:
+      oc_server: https://api.silver.devops.gov.bc.ca:6443
+      # Optional: backup only specific routes
+      # route: myapp-vanity
+      # label: "app=myapp"
+      prefix: backup
+```
+
+#### Option 2: OpenShift CronJob
+
+Deploy a CronJob directly in your OpenShift namespace for automated backups:
+
+```bash
+# Deploy the CronJob with default settings (runs daily at 2 AM)
+oc process -f cronjob-template.yaml | oc apply -f -
+
+# Customize the schedule and other parameters
+oc process -f cronjob-template.yaml \
+  -p SCHEDULE="0 2 * * *" \
+  -p SECRET_PREFIX="backup" \
+  -p LABEL_SELECTOR="app=myapp" \
+  | oc apply -f -
+
+# Backup only a specific route
+oc process -f cronjob-template.yaml \
+  -p ROUTE_NAME="myapp-vanity" \
+  | oc apply -f -
+```
+
+The CronJob template creates:
+- A ServiceAccount with permissions to read routes and manage secrets
+- A Role and RoleBinding for the required permissions
+- A ConfigMap containing the backup script
+- A CronJob that runs on the specified schedule
+
+### Restoring from Backup
+
+To restore a certificate from a backup secret to a route:
+
+```bash
+# Extract certificate data from backup secret
+ROUTE_NAME="myapp-vanity"
+oc get secret backup-${ROUTE_NAME}-tls -o jsonpath='{.data.tls\.crt}' | base64 -d > ${ROUTE_NAME}.pem
+oc get secret backup-${ROUTE_NAME}-tls -o jsonpath='{.data.tls\.key}' | base64 -d > ${ROUTE_NAME}.key
+oc get secret backup-${ROUTE_NAME}-tls -o jsonpath='{.data.ca\.crt}' | base64 -d > ${ROUTE_NAME}.ca-cert
+
+# Reinstall the certificate using the install_cert.sh script
+./install_cert.sh
+```
+
+### Managing Backup Secrets
+
+```bash
+# List all backup secrets
+oc get secrets -l backup.openshift.io/type=route-tls
+
+# View details of a backup secret
+oc describe secret backup-myapp-vanity-tls
+
+# Delete old backups (if needed)
+oc delete secret backup-myapp-vanity-tls
+```
 
 ## Reinstall and Renewals
 
