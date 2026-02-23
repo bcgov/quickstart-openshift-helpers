@@ -112,7 +112,7 @@ jobs:
           fi
 
       - name: Create or update CSR secret in OpenShift
-        uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0 # v1.3.0
+        uses: bcgov/action-oc-runner@b6746946ac96aaac9a5ddc8c93c08fa9c308f42a # v1.4.0
         env:
           OC_TOKEN: ${{ inputs.oc_token || secrets.oc_token }}
           OC_SERVER: ${{ inputs.oc_server }}
