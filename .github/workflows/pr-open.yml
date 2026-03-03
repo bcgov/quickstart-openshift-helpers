@@ -111,9 +111,11 @@ jobs:
           oc_server: ${{ secrets.oc_server || 'https://api.silver.devops.gov.bc.ca:6443' }}
           commands: |
             # Create a ConfigMap labeled for label-based cleanup test
+            # Delete first so reruns don't fail with AlreadyExists
             label="app=${{ github.event.repository.name }}-${{ github.event.number }}"
+            oc delete configmap test-label-cleanup-${{ github.event.number }} --ignore-not-found
             oc create configmap test-label-cleanup-${{ github.event.number }} --from-literal=test=true
-            oc label configmap test-label-cleanup-${{ github.event.number }} ${label}
+            oc label --overwrite configmap test-label-cleanup-${{ github.event.number }} ${label}
 
             # Verify it exists by label before handing off
             oc get configmap -l ${label}
@@ -141,15 +143,26 @@ jobs:
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ secrets.oc_server || 'https://api.silver.devops.gov.bc.ca:6443' }}
           commands: |
-            # Confirm all labeled resources were removed
+            # Confirm all labeled resources were removed, with a short wait for async deletes
             label="app=${{ github.event.repository.name }}-${{ github.event.number }}"
-            remaining=$(oc get all,cm,pvc,secret -l ${label} -o name 2>/dev/null || true)
-            if [ -n "${remaining}" ]; then
-              echo "ERROR: Resources with label ${label} still exist:"
+            max_wait=60
+            interval=5
+            end_time=$((SECONDS + max_wait))
+            while true; do
+              remaining=$(oc get all,cm,pvc,secret -l "${label}" -o name)
+              if [ -z "${remaining}" ]; then
+                echo "All resources with label ${label} have been cleaned up."
+                break
+              fi
+              if [ "${SECONDS}" -ge "${end_time}" ]; then
+                echo "ERROR: Resources with label ${label} still exist after ${max_wait}s:"
+                echo "${remaining}"
+                exit 1
+              fi
+              echo "Resources still exist, rechecking in ${interval}s..."
               echo "${remaining}"
-              exit 1
-            fi
-            echo "All resources with label ${label} have been cleaned up."
+              sleep "${interval}"
+            done
 
   csr-generator: # testing, will be deleted
     name: Certificate Generation
