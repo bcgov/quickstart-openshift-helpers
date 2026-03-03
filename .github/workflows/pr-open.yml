@@ -121,6 +121,8 @@ jobs:
   label-cleanup:
     name: Label Cleanup (cleanup)
     needs: [label-setup]
+    permissions:
+      packages: write
     uses: ./.github/workflows/.pr-close.yml
     secrets: inherit
     with:
