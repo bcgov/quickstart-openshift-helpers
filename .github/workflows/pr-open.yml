@@ -98,6 +98,57 @@ jobs:
       packages: backend frontend migrations
       tag_promote: latest
 
+  label-setup:
+    name: Label Cleanup (setup)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Create labeled ConfigMap
+        uses: bcgov/action-oc-runner@57a28c38359c93e43edf609d35b9a3f50a070131 # v1.4.0
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ secrets.oc_server || 'https://api.silver.devops.gov.bc.ca:6443' }}
+          commands: |
+            # Create a ConfigMap labeled for label-based cleanup test
+            label="app=${{ github.event.repository.name }}-${{ github.event.number }}"
+            oc create configmap test-label-cleanup-${{ github.event.number }} --from-literal=test=true
+            oc label configmap test-label-cleanup-${{ github.event.number }} ${label}
+
+            # Verify it exists by label before handing off
+            oc get configmap -l ${label}
+
+  label-cleanup:
+    name: Label Cleanup (cleanup)
+    needs: [label-setup]
+    uses: ./.github/workflows/.pr-close.yml
+    secrets: inherit
+    with:
+      cleanup: label
+
+  label-verify:
+    name: Label Cleanup (verify)
+    needs: [label-cleanup]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Verify labeled resources are gone
+        uses: bcgov/action-oc-runner@57a28c38359c93e43edf609d35b9a3f50a070131 # v1.4.0
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ secrets.oc_server || 'https://api.silver.devops.gov.bc.ca:6443' }}
+          commands: |
+            # Confirm all labeled resources were removed
+            label="app=${{ github.event.repository.name }}-${{ github.event.number }}"
+            remaining=$(oc get all,cm,pvc,secret -l ${label} -o name 2>/dev/null || true)
+            if [ -n "${remaining}" ]; then
+              echo "ERROR: Resources with label ${label} still exist:"
+              echo "${remaining}"
+              exit 1
+            fi
+            echo "All resources with label ${label} have been cleaned up."
+
   csr-generator: # testing, will be deleted
     name: Certificate Generation
     uses: ./.github/workflows/csr-generator.yml
@@ -110,7 +161,7 @@ jobs:
 
   results:
     name: Results
-    needs: [builds, csr-generator, deploys, schema-spy, validate]
+    needs: [builds, csr-generator, deploys, label-verify, schema-spy, validate]
     runs-on: ubuntu-24.04
     steps:
       - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
