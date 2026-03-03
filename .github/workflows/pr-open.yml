@@ -10,6 +10,9 @@ concurrency:
 
 permissions: {}
 
+env:
+  CLEANUP_LABEL: "app=${{ github.event.repository.name }}-${{ github.event.number }}"
+
 jobs:
   schema-spy:
     name: Schema Spy
@@ -102,6 +105,8 @@ jobs:
     name: Label Cleanup (setup)
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    env:
+      CLEANUP_LABEL: app=${{ github.event.repository.name }}-${{ github.event.number }}
     steps:
       - name: Create labeled ConfigMap
         uses: bcgov/action-oc-runner@57a28c38359c93e43edf609d35b9a3f50a070131 # v1.4.0
@@ -112,10 +117,9 @@ jobs:
           commands: |
             # Create a ConfigMap labeled for label-based cleanup test
             # Delete first so reruns don't fail with AlreadyExists
-            label="app=${{ github.event.repository.name }}-${{ github.event.number }}"
             oc delete configmap test-label-cleanup-${{ github.event.number }} --ignore-not-found
             oc create configmap test-label-cleanup-${{ github.event.number }} --from-literal=test=true
-            oc label --overwrite configmap test-label-cleanup-${{ github.event.number }} ${label}
+            oc label --overwrite configmap test-label-cleanup-${{ github.event.number }} ${{ env.CLEANUP_LABEL }}
 
   label-cleanup:
     name: Label Cleanup (cleanup)
@@ -132,6 +136,8 @@ jobs:
     needs: [label-cleanup]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    env:
+      CLEANUP_LABEL: app=${{ github.event.repository.name }}-${{ github.event.number }}
     steps:
       - name: Verify labeled resources are gone
         uses: bcgov/action-oc-runner@57a28c38359c93e43edf609d35b9a3f50a070131 # v1.4.0
@@ -140,16 +146,8 @@ jobs:
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ secrets.oc_server || 'https://api.silver.devops.gov.bc.ca:6443' }}
           commands: |
-            # Confirm all labeled resources were removed
-            # oc delete is synchronous; if anything remains, cleanup failed
-            label="app=${{ github.event.repository.name }}-${{ github.event.number }}"
-            remaining=$(oc get all,cm,pvc,secret -l "${label}" -o name)
-            if [ -n "${remaining}" ]; then
-              echo "ERROR: Resources with label ${label} still exist after cleanup:"
-              echo "${remaining}"
-              exit 1
-            fi
-            echo "All resources with label ${label} have been cleaned up."
+            # Fail if any resources with the cleanup label still exist
+            oc get all,cm,pvc,secret -l "${{ env.CLEANUP_LABEL }}" -o name | grep . && exit 1 || true
 
   csr-generator: # testing, will be deleted
     name: Certificate Generation
