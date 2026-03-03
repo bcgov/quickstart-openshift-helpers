@@ -143,26 +143,16 @@ jobs:
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ secrets.oc_server || 'https://api.silver.devops.gov.bc.ca:6443' }}
           commands: |
-            # Confirm all labeled resources were removed, with a short wait for async deletes
+            # Confirm all labeled resources were removed
+            # oc delete is synchronous; if anything remains, cleanup failed
             label="app=${{ github.event.repository.name }}-${{ github.event.number }}"
-            max_wait=60
-            interval=5
-            end_time=$((SECONDS + max_wait))
-            while true; do
-              remaining=$(oc get all,cm,pvc,secret -l "${label}" -o name)
-              if [ -z "${remaining}" ]; then
-                echo "All resources with label ${label} have been cleaned up."
-                break
-              fi
-              if [ "${SECONDS}" -ge "${end_time}" ]; then
-                echo "ERROR: Resources with label ${label} still exist after ${max_wait}s:"
-                echo "${remaining}"
-                exit 1
-              fi
-              echo "Resources still exist, rechecking in ${interval}s..."
+            remaining=$(oc get all,cm,pvc,secret -l "${label}" -o name)
+            if [ -n "${remaining}" ]; then
+              echo "ERROR: Resources with label ${label} still exist after cleanup:"
               echo "${remaining}"
-              sleep "${interval}"
-            done
+              exit 1
+            fi
+            echo "All resources with label ${label} have been cleaned up."
 
   csr-generator: # testing, will be deleted
     name: Certificate Generation
