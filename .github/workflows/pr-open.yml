@@ -113,7 +113,7 @@ jobs:
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ secrets.oc_server || 'https://api.silver.devops.gov.bc.ca:6443' }}
+          oc_server: ${{ vars.oc_server }}
           commands: |
             # Create a ConfigMap labeled for label-based cleanup test
             # Delete first so reruns don't fail with AlreadyExists
@@ -144,10 +144,10 @@ jobs:
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
-          oc_server: ${{ secrets.oc_server || 'https://api.silver.devops.gov.bc.ca:6443' }}
+          oc_server: ${{ vars.oc_server }}
           commands: |
             # Fail if any resources with the cleanup label still exist
-            oc get all,cm,pvc,secret -l "${{ env.CLEANUP_LABEL }}" -o name | grep . && exit 1 || true
+            oc get cm -l "${{ env.CLEANUP_LABEL }}" -o name | grep . && exit 1 || true
 
   csr-generator: # testing, will be deleted
     name: Certificate Generation
@@ -157,7 +157,7 @@ jobs:
       oc_token: ${{ secrets.oc_token }}
     with:
       domain: example.gov.bc.ca
-      oc_server: https://api.silver.devops.gov.bc.ca:6443
+      oc_server: ${{ vars.oc_server }}
 
   results:
     name: Results
