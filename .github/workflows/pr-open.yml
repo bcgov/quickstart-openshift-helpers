@@ -113,11 +113,17 @@ jobs:
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ vars.oc_server }}
           commands: |
-            # Create a ConfigMap labeled for label-based cleanup test
-            # Delete first so reruns don't fail with AlreadyExists
-            oc delete configmap test-label-cleanup-${{ github.event.number }} --ignore-not-found
-            oc create configmap test-label-cleanup-${{ github.event.number }} --from-literal=test=true
-            oc label --overwrite configmap test-label-cleanup-${{ github.event.number }} ${{ env.CLEANUP_LABEL }}
+            # Create (or update) a ConfigMap labeled for label-based cleanup test
+            oc apply -f - <<EOF
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: test-label-cleanup-${{ github.event.number }}
+              labels:
+                app: ${{ github.event.repository.name }}-${{ github.event.number }}
+            data:
+              test: "true"
+            EOF
 
   label-cleanup:
     name: Label Cleanup (cleanup)
@@ -143,7 +149,7 @@ jobs:
           oc_server: ${{ vars.oc_server }}
           commands: |
             # Fail if any resources with the cleanup label still exist
-            oc get cm -l "${{ env.CLEANUP_LABEL }}" -o name | grep . && exit 1 || true
+            oc get cm -l "app=${{ github.event.repository.name }}-${{ github.event.number }}" -o name | grep . && exit 1 || true
 
   csr-generator: # testing, will be deleted
     name: Certificate Generation
