@@ -117,9 +117,6 @@ jobs:
             oc create configmap test-label-cleanup-${{ github.event.number }} --from-literal=test=true
             oc label --overwrite configmap test-label-cleanup-${{ github.event.number }} ${label}
 
-            # Verify it exists by label before handing off
-            oc get configmap -l ${label}
-
   label-cleanup:
     name: Label Cleanup (cleanup)
     needs: [label-setup]
