@@ -139,6 +139,7 @@ jobs:
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ secrets.oc_server || env.DEFAULT_OC_SERVER }}
           commands: |
+            set -x
             # Cleanup for OpenShift template deployments, uses labels
 
             # Remove old build runs, build pods and deployment pods
