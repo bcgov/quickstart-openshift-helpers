@@ -10,6 +10,9 @@ concurrency:
 
 permissions: {}
 
+env:
+  CLEANUP_LABEL: "app=${{ github.event.repository.name }}-${{ github.event.number }}"
+
 jobs:
   schema-spy:
     name: Schema Spy
@@ -98,6 +101,56 @@ jobs:
       packages: backend frontend migrations
       tag_promote: latest
 
+  label-setup:
+    name: Label Cleanup (setup)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Create labeled ConfigMap
+        uses: bcgov/action-oc-runner@57a28c38359c93e43edf609d35b9a3f50a070131 # v1.4.0
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ vars.oc_server }}
+          commands: |
+            # Create (or update) a ConfigMap labeled for label-based cleanup test
+            oc apply -f - <<EOF
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: test-label-cleanup-${{ github.event.number }}
+              labels:
+                app: ${{ github.event.repository.name }}-${{ github.event.number }}
+            data:
+              test: "true"
+            EOF
+
+  label-cleanup:
+    name: Label Cleanup (cleanup)
+    needs: [label-setup]
+    permissions:
+      packages: write
+    uses: ./.github/workflows/.pr-close.yml
+    secrets: inherit
+    with:
+      cleanup: label
+
+  label-verify:
+    name: Label Cleanup (verify)
+    needs: [label-cleanup]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Verify labeled resources are gone
+        uses: bcgov/action-oc-runner@57a28c38359c93e43edf609d35b9a3f50a070131 # v1.4.0
+        with:
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_token: ${{ secrets.oc_token }}
+          oc_server: ${{ vars.oc_server }}
+          commands: |
+            # Fail if any resources with the cleanup label still exist
+            oc get cm -l "app=${{ github.event.repository.name }}-${{ github.event.number }}" -o name | grep . && exit 1 || true
+
   csr-generator: # testing, will be deleted
     name: Certificate Generation
     uses: ./.github/workflows/csr-generator.yml
@@ -106,11 +159,11 @@ jobs:
       oc_token: ${{ secrets.oc_token }}
     with:
       domain: example.gov.bc.ca
-      oc_server: https://api.silver.devops.gov.bc.ca:6443
+      oc_server: ${{ vars.oc_server }}
 
   results:
     name: Results
-    needs: [builds, csr-generator, deploys, schema-spy, validate]
+    needs: [builds, csr-generator, deploys, label-verify, schema-spy, validate]
     runs-on: ubuntu-24.04
     steps:
       - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
