@@ -29,9 +29,9 @@ on:
         type: string
         default: ${{ github.event.repository.default_branch }}
       cleanup_name:
-        description: "Use if template/cleanup name differs from repo"
+        description: "Use if template/cleanup name differs from repo; space-separated for multiple names"
         type: string
-        default: ${{ github.event.repository.name }}
+        default: ""
       organization:
         description: "GitHub organization; e.g. bcgov"
         default: ${{ github.repository_owner }}
@@ -139,10 +139,19 @@ jobs:
           oc_token: ${{ secrets.oc_token }}
           oc_server: ${{ secrets.oc_server || env.DEFAULT_OC_SERVER }}
           commands: |
+            set -x
             # Cleanup for OpenShift template deployments, uses labels
 
             # Remove old build runs, build pods and deployment pods
-            oc delete all,cm,pvc,secret -l app=${{ inputs.cleanup_name }}-${{ inputs.target }}
+            if [ -n "${{ inputs.cleanup_name }}" ]; then
+              for name in ${{ inputs.cleanup_name }}; do
+                oc delete all,cm,pvc,secret -l app=${name} || \
+                  echo "Not found: ${name}"
+              done
+            else
+              oc delete all,cm,pvc,secret -l app=${{ github.event.repository.name }}-${{ inputs.target }} || \
+                echo "Not found: ${{ github.event.repository.name }}-${{ inputs.target }}"
+            fi
 
       - name: Remove PVCs
         if: inputs.remove_pvc
