@@ -6,8 +6,9 @@ set -euo nounset
 # Usage: ./csr_generator.sh [options] [DOMAIN] [PRIVATE_KEY]
 #
 # Options:
-#   -i, --interactive    Run in interactive mode
 #   -h, --help           Display help message and exit
+#
+# If DOMAIN is not provided, the script runs interactively.
 
 # Sorry, internal! - https://apps.nrs.gov.bc.ca/int/confluence/display/DEVGUILD/Generating+a+CSR
 # https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent
@@ -17,28 +18,22 @@ display_help() {
   echo "Usage: $0 [options] [DOMAIN] [PRIVATE_KEY]"
   echo ""
   echo "Options:"
-  echo "  -i, --interactive    Run in interactive mode"
   echo "  -h, --help           Display this help message and exit"
   echo ""
   echo "Examples:"
-  echo "  $0 example.com                    # Specify domain"
-  echo "  $0 -i example.com                 # Specify domain with interactive mode"
-  echo "  $0 example.com /path/to/key.pem   # Specify domain and key"
+  echo "  $0 example.com                    # Specify domain (automated)"
+  echo "  $0 example.com /path/to/key.pem   # Specify domain and key (automated)"
+  echo "  $0                                # Interactive mode"
   exit 0
 }
 
 # Parse options
-INTERACTIVE=false
 DOMAIN=""
 PRIVATE_KEY=""
 
 # Process options
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -i|--interactive)
-      INTERACTIVE=true
-      shift
-      ;;
     -h|--help)
       display_help
       ;;
@@ -58,15 +53,17 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Interactivity is determined by whether DOMAIN was provided
+if [[ -z "${DOMAIN}" ]]; then
+  INTERACTIVE=true
+else
+  INTERACTIVE=false
+fi
+
 ### Get inputs
 
 # Vanity URL (DOMAIN)
 if [[ -z "${DOMAIN}" ]]; then
-  if [[ "$INTERACTIVE" = false ]]; then
-    echo "Error: Domain name is required in non-interactive mode"
-    display_help
-    exit 1
-  fi
   echo "Enter the fully qualified domain name (FQDN) name for the certificate:"
   read DOMAIN
 fi
@@ -176,7 +173,7 @@ echo "  - Financial Reporting Account:"
 echo ""
 echo "- Attach the newly generated CSR file only"
 
-# Open JIRA - optional, only in interactive mode
+# Open JIRA - only in interactive mode
 if [[ "$INTERACTIVE" = true ]]; then
   echo -e "\nWould you like to be redirected to Natural Resources JIRA? [y/n]"
   read ACCEPT
