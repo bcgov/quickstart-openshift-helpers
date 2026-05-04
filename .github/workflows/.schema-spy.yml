@@ -24,6 +24,11 @@ on:
         default: "users"
         required: false
         type: string
+      deploy_dir:
+        description: "Target directory in gh-pages branch (leave empty for root)"
+        default: ""
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -74,3 +79,4 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@d92aa235d04922e8f08b40ce78cc5442fcfbfa2f # v4
         with:
           folder: output
+          target-folder: ${{ inputs.deploy_dir }}
