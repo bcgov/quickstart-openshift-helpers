@@ -1,0 +1,196 @@
+---
+name: Route Manager
+on:
+  workflow_call:
+    secrets:
+      oc_token:
+        description: "OpenShift token"
+        required: true
+      oc_namespace:
+        description: "OpenShift namespace"
+        required: true
+      certificate:
+        description: "Certificate content (.pem file)"
+        required: true
+      private_key:
+        description: "Private key content (.key file)"
+        required: true
+      ca_certificate:
+        description: "CA certificate content (.ca-cert file)"
+        required: true
+
+    inputs:
+      domain:
+        description: "Fully qualified domain name (FQDN) for the route"
+        required: true
+        type: string
+      service:
+        description: "OpenShift service name to expose"
+        required: true
+        type: string
+      path:
+        description: "Optional path/subdir for the route (e.g., /api)"
+        required: false
+        default: ""
+        type: string
+      oc_server:
+        description: "OpenShift server"
+        required: false
+        default: "https://api.silver.devops.gov.bc.ca:6443"
+        type: string
+      route_name:
+        description: "Custom route name (defaults to <service>-vanity)"
+        required: false
+        default: ""
+        type: string
+
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: "Fully qualified domain name (FQDN) for the route"
+        required: true
+        type: string
+      service:
+        description: "OpenShift service name to expose"
+        required: true
+        type: string
+      path:
+        description: "Optional path/subdir for the route (e.g., /api)"
+        required: false
+        default: ""
+        type: string
+      certificate:
+        description: "Certificate content (.pem file)"
+        required: true
+        type: string
+      private_key:
+        description: "Private key content (.key file)"
+        required: true
+        type: string
+      ca_certificate:
+        description: "CA certificate content (.ca-cert file)"
+        required: true
+        type: string
+      oc_token:
+        description: "OpenShift token"
+        required: true
+        type: string
+      oc_namespace:
+        description: "OpenShift namespace"
+        required: true
+        type: string
+      oc_server:
+        description: "OpenShift server"
+        required: false
+        default: "https://api.silver.devops.gov.bc.ca:6443"
+        type: string
+      route_name:
+        description: "Custom route name (defaults to <service>-vanity)"
+        required: false
+        default: ""
+        type: string
+
+permissions: {}
+
+jobs:
+  manage-route:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Prepare certificate files
+        id: prepare-certs
+        run: |
+          # Create temporary directory with random name for security
+          CERT_DIR=$(mktemp -d)
+          echo "CERT_DIR=${CERT_DIR}" >> $GITHUB_ENV
+          cd "${CERT_DIR}"
+
+          # Store certificates in environment for proper handling
+          # Certificate
+          echo "CERT_CONTENT<<EOF" >> $GITHUB_ENV
+          CERT="${{ inputs.certificate || secrets.certificate }}"
+          echo "${CERT}" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+          # Private key
+          echo "KEY_CONTENT<<EOF" >> $GITHUB_ENV
+          PKEY="${{ inputs.private_key || secrets.private_key }}"
+          echo "${PKEY}" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+          # CA certificate
+          echo "CA_CONTENT<<EOF" >> $GITHUB_ENV
+          CA_CERT="${{ inputs.ca_certificate || secrets.ca_certificate }}"
+          echo "${CA_CERT}" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+          # Mask sensitive content line by line
+          while IFS= read -r line; do
+            [[ -n "$line" ]] && echo "::add-mask::$line"
+          done <<< "${{ inputs.private_key || secrets.private_key }}"
+
+          while IFS= read -r line; do
+            [[ -n "$line" ]] && echo "::add-mask::$line"
+          done <<< "${{ inputs.certificate || secrets.certificate }}"
+
+          while IFS= read -r line; do
+            [[ -n "$line" ]] && echo "::add-mask::$line"
+          done <<< "${{ inputs.ca_certificate || secrets.ca_certificate }}"
+
+      - name: Create certificate files
+        env:
+          DOMAIN: ${{ inputs.domain }}
+        run: |
+          cd "${CERT_DIR}"
+
+          # Create certificate files from environment variables
+          printf '%s' "${{ env.CERT_CONTENT }}" > "${DOMAIN}.pem"
+          printf '%s' "${{ env.KEY_CONTENT }}" > "${DOMAIN}.key"
+          printf '%s' "${{ env.CA_CONTENT }}" > "${DOMAIN}.ca-cert"
+
+          # Set secure permissions
+          chmod 600 "${DOMAIN}.key"
+          chmod 644 "${DOMAIN}.pem"
+          chmod 644 "${DOMAIN}.ca-cert"
+
+          # Verify files were created and are not empty
+          echo "Certificate files created:"
+          ls -lh "${DOMAIN}.pem" "${DOMAIN}.key" "${DOMAIN}.ca-cert"
+
+          # Check file sizes
+          for file in "${DOMAIN}.pem" "${DOMAIN}.key" "${DOMAIN}.ca-cert"; do
+            if [ ! -s "${file}" ]; then
+              echo "Error: ${file} is empty or does not exist"
+              exit 1
+            fi
+          done
+          echo "All certificate files verified (non-empty)"
+
+      - name: Create or update route in OpenShift
+        # yamllint disable-line rule:line-length
+        uses: bcgov/action-oc-runner@f900830adadd4d9eef3ca6ff80103e839ba8b7c0  # v1.3.0
+        env:
+          OC_TOKEN: ${{ inputs.oc_token || secrets.oc_token }}
+          OC_SERVER: ${{ inputs.oc_server }}
+          OC_NAMESPACE: ${{ inputs.oc_namespace || secrets.oc_namespace }}
+          DOMAIN: ${{ inputs.domain }}
+          SERVICE: ${{ inputs.service }}
+          PATH: ${{ inputs.path }}
+          ROUTE_NAME: ${{ inputs.route_name }}
+          CERT_DIR: ${{ env.CERT_DIR }}
+        with:
+          oc_namespace: ${{ env.OC_NAMESPACE }}
+          oc_token: ${{ env.OC_TOKEN }}
+          oc_server: ${{ env.OC_SERVER }}
+          commands: |
+            # Execute route manager script
+            bash "${{ github.workspace }}/oc_scripts/route-manager.sh"
+
+      - name: Cleanup certificate files
+        if: always()
+        run: |
+          # Remove certificate files from random directory
+          rm -rf "${CERT_DIR}"
+          echo "Certificate files cleaned up"
