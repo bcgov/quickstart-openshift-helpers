@@ -48,8 +48,6 @@ on:
         required: true
         type: string
 
-permissions: {}
-
 jobs:
   generate-csr:
     runs-on: ubuntu-latest

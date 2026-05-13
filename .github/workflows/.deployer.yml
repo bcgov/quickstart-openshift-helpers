@@ -80,8 +80,6 @@ on:
         description: OpenShift token
         required: true
 
-permissions: {}
-
 jobs:
   deploy:
     name: Helm

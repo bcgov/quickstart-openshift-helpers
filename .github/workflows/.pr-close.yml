@@ -64,8 +64,6 @@ on:
         description: "OpenShift server, defaults to https://api.silver.devops.gov.bc.ca:6443"
         required: false
 
-permissions: {}
-
 env:
   DEFAULT_OC_SERVER: https://api.silver.devops.gov.bc.ca:6443
 

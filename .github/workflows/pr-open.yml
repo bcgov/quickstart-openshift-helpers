@@ -61,6 +61,8 @@ jobs:
   deploy-db:
     name: Stack
     environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
     runs-on: ubuntu-24.04
     outputs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
@@ -78,6 +80,7 @@ jobs:
     name: Deploys
     needs: [builds, deploy-db]
     permissions:
+      contents: read
       packages: write
     uses: ./.github/workflows/.deployer.yml
     secrets:
@@ -93,6 +96,7 @@ jobs:
     name: Cleanup
     needs: [deploys]
     permissions:
+      contents: read
       packages: write
     uses: ./.github/workflows/.pr-close.yml
     secrets: inherit
@@ -103,6 +107,8 @@ jobs:
 
   label-setup:
     name: Label Cleanup (setup)
+    permissions:
+      contents: read
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -129,6 +135,7 @@ jobs:
     name: Label Cleanup (cleanup)
     needs: [label-setup]
     permissions:
+      contents: read
       packages: write
     uses: ./.github/workflows/.pr-close.yml
     secrets: inherit
@@ -138,6 +145,8 @@ jobs:
   label-verify:
     name: Label Cleanup (verify)
     needs: [label-cleanup]
+    permissions:
+      contents: read
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -153,6 +162,8 @@ jobs:
 
   csr-generator: # testing, will be deleted
     name: Certificate Generation
+    permissions:
+      contents: read
     uses: ./.github/workflows/csr-generator.yml
     secrets:
       oc_namespace: ${{ secrets.oc_namespace }}
