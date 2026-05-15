@@ -61,6 +61,8 @@ jobs:
   deploy-db:
     name: Stack
     environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
     runs-on: ubuntu-24.04
     outputs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
@@ -78,6 +80,7 @@ jobs:
     name: Deploys
     needs: [builds, deploy-db]
     permissions:
+      contents: read
       packages: write
     uses: ./.github/workflows/.deployer.yml
     secrets:
@@ -93,6 +96,7 @@ jobs:
     name: Cleanup
     needs: [deploys]
     permissions:
+      contents: read
       packages: write
     uses: ./.github/workflows/.pr-close.yml
     secrets: inherit
@@ -103,11 +107,13 @@ jobs:
 
   label-setup:
     name: Label Cleanup (setup)
+    permissions:
+      contents: read
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Create labeled ConfigMap
-        uses: bcgov/action-oc-runner@d2fc921aaa9d70684c186dbb7754e6985d44d86f # v1.4.1
+        uses: bcgov/action-oc-runner@1815ce17a815c71e9078851a2e3da84d191ea6c3 #v.1.5.0
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
@@ -129,6 +135,7 @@ jobs:
     name: Label Cleanup (cleanup)
     needs: [label-setup]
     permissions:
+      contents: read
       packages: write
     uses: ./.github/workflows/.pr-close.yml
     secrets: inherit
@@ -138,11 +145,13 @@ jobs:
   label-verify:
     name: Label Cleanup (verify)
     needs: [label-cleanup]
+    permissions:
+      contents: read
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Verify labeled resources are gone
-        uses: bcgov/action-oc-runner@d2fc921aaa9d70684c186dbb7754e6985d44d86f # v1.4.1
+        uses: bcgov/action-oc-runner@1815ce17a815c71e9078851a2e3da84d191ea6c3 #v.1.5.0
         with:
           oc_namespace: ${{ secrets.oc_namespace }}
           oc_token: ${{ secrets.oc_token }}
@@ -153,6 +162,8 @@ jobs:
 
   csr-generator: # testing, will be deleted
     name: Certificate Generation
+    permissions:
+      contents: read
     uses: ./.github/workflows/csr-generator.yml
     secrets:
       oc_namespace: ${{ secrets.oc_namespace }}

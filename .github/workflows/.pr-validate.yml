@@ -19,8 +19,6 @@ on:
         required: false
         type: string
 
-permissions: {}
-
 jobs:
   checks:
     name: Checks
