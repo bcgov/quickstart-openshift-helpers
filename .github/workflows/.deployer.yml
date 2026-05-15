@@ -95,7 +95,7 @@ jobs:
       # Variables
       - if: inputs.tag  == ''
         id: pr
-        uses: bcgov/action-get-pr@fix/explicit-token-checkout
+        uses: bcgov/action-get-pr@1faf651ec9c8a01e8157e62aa6a904578a8783c4 #v0.2.0
 
       - name: Vars
         id: vars
