@@ -143,11 +143,11 @@ jobs:
             # Remove old build runs, build pods and deployment pods
             if [ -n "${{ inputs.cleanup_name }}" ]; then
               for name in ${{ inputs.cleanup_name }}; do
-                oc delete all,cm,pvc,secret -l app=${name} || \
+                oc delete all,cm,pvc,secret,networkpolicy -l app=${name} || \
                   echo "Not found: ${name}"
               done
             else
-              oc delete all,cm,pvc,secret -l app=${{ github.event.repository.name }}-${{ inputs.target }} || \
+              oc delete all,cm,pvc,secret,networkpolicy -l app=${{ github.event.repository.name }}-${{ inputs.target }} || \
                 echo "Not found: ${{ github.event.repository.name }}-${{ inputs.target }}"
             fi
 
