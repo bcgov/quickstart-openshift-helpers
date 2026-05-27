@@ -172,19 +172,28 @@ jobs:
       domain: example.gov.bc.ca
       oc_server: ${{ vars.oc_server }}
 
+  # ==========================================================================
+  # WARNING: This job acts as the required merge gate for this workflow.
+  # If you add a new job to this workflow, you MUST add its ID to the 'needs'
+  # array below, otherwise its failure or cancellation will not block the PR!
+  # ==========================================================================
   results:
     name: Results
     needs: [builds, csr-generator, deploys, label-verify, schema-spy, validate]
+    if: always()
     runs-on: ubuntu-24.04
+    timeout-minutes: 1
     steps:
-      - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
-        run: echo "At least one job has failed." && exit 1
+      - name: Log Job Results Context
+        run: |
+          echo "=== Upstream Job Statuses ==="
+          echo '${{ toJson(needs) }}'
 
-      - if: needs.deploys.outputs.triggered == 'true'
-        run: echo "Deploy triggered successfully!"
+      - name: Evaluate Overall Status
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: |
+          echo "❌ Critical Check Failure: At least one required job has failed or was cancelled."
+          exit 1
 
-      # - if: needs.deploys.outputs.triggered != 'true'
-      #   run: |
-      #     # Handle fail
-      #     echo "needs.deploys == ${{ toJson(needs.deploys) }}"
-      #     exit 1
+      - name: Success Message
+        run: echo "✅ All critical checks passed or were intentionally skipped!"
