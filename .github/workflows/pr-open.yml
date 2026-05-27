@@ -173,12 +173,13 @@ jobs:
       oc_server: ${{ vars.oc_server }}
 
   results:
+    if: always()
     name: Results
     needs: [builds, csr-generator, deploys, label-verify, schema-spy, validate]
     runs-on: ubuntu-24.04
     steps:
       - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'cancelled')
-        run: echo "At least one job has failed." && exit 1
+        run: echo "At least one job has failed or was cancelled." && exit 1
 
       - if: needs.deploys.outputs.triggered == 'true'
         run: echo "Deploy triggered successfully!"
