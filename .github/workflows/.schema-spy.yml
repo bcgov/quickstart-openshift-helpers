@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Flyway
-        uses: docker://flyway/flyway:12@sha256:4c7f14b4eea7a628c954a6905dfb25a8815e46a98d21a481f8160dd1eb04c7a3
+        uses: docker://flyway/flyway:12@sha256:66c5e4f3b9e57e687e5954854cd854a474cc151ae86d961827a42da8ed5c9a90
         env:
           FLYWAY_URL: jdbc:postgresql://postgres:5432/default
           FLYWAY_USER: postgres
