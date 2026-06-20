@@ -54,7 +54,7 @@ jobs:
           - 5432:5432
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Flyway
         uses: docker://flyway/flyway:12@sha256:66c5e4f3b9e57e687e5954854cd854a474cc151ae86d961827a42da8ed5c9a90
