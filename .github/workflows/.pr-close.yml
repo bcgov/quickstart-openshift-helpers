@@ -75,7 +75,7 @@ jobs:
       packages: ${{ steps.packages.outputs.packages }}
     steps:
       - name: Deprecation Warning
-        run: echo "::warning title=Deprecated Workflow::This workflow (.pr-close.yml) is deprecated and will be removed. Please migrate to uses: bcgov/actions/.github/workflows/.pr-close.yml@v1"
+        run: echo "::warning title=Deprecated Workflow::This workflow (.pr-close.yml) is deprecated and will be removed. Please migrate to uses: bcgov/actions/.github/workflows/.image-promote.yml@v1"
 
       - id: packages
         run: |
@@ -117,7 +117,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Deprecation Warning
-        run: echo "::warning title=Deprecated Workflow::This workflow (.pr-close.yml) is deprecated and will be removed. Please migrate to uses: bcgov/actions/.github/workflows/.pr-close.yml@v1"
+        run: echo "::warning title=Deprecated Workflow::This workflow (.pr-close.yml) is deprecated and will be removed. Please migrate to uses: bcgov/actions-openshift/cleanup@v1"
 
       - name: Helm Cleanup
         env:
