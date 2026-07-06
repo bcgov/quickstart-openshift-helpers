@@ -10,8 +10,8 @@ on:
         required: false
         type: string
       reject_forks:
-        description: 'Are forks allowed?  [true|false]'
-        default: 'false'
+        description: 'Reject forks? [true|false]'
+        default: 'true'
         required: false
         type: string
       markdown_links:
@@ -38,12 +38,12 @@ jobs:
 
       # Check for forks
       - name: Fork Check
-        if: inputs.reject_forks != 'true' && github.event.pull_request.head.repo.fork
+        if: inputs.reject_forks == 'true' && github.event.pull_request.head.repo.fork
         run: exit 1
 
       # Add PR Description, doesn't work with forks
       - name: PR Description
-        if: inputs.reject_forks != 'true' && inputs.markdown_links != '' && !github.event.pull_request.head.repo.fork
+        if: inputs.markdown_links != '' && !github.event.pull_request.head.repo.fork
         uses: bcgov/action-pr-description-add@9bf88aec33edb7c00ed72f9305aa1721d0cdab9f # v2.0.3
         env:
           DOMAIN: apps.silver.devops.gov.bc.ca

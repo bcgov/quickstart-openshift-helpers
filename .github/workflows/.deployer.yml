@@ -69,7 +69,7 @@ on:
 
     outputs:
       triggered:
-        description: 'Has a deployment has been triggered?'
+        description: 'Has a deployment been triggered?'
         value: ${{ jobs.deploy.outputs.triggered }}
 
     secrets:
@@ -106,7 +106,7 @@ jobs:
           # Tag defaults to PR number, but can be overridden by inputs.tag
           tag=${{ inputs.tag || steps.pr.outputs.pr }}
 
-          # Release name includes run numbers to ensure uniqueness
+          # Release name uses repo name + target (environment/tag/PR) to remain consistent across runs
           release=${{ github.event.repository.name }}-${{ inputs.environment || inputs.tag || steps.pr.outputs.pr }}
           
           # Version, used for non-PR releases
