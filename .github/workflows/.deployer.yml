@@ -127,6 +127,7 @@ jobs:
 
       ### Deploy
       - name: Interrupt deployments (PR only)
+        id: deploy
         if: github.event_name == 'pull_request'
         uses: bcgov/action-oc-runner@111868d1fc50db0a40417ba321d865ef5c931bbd # v1.7.0
         with:

@@ -166,6 +166,6 @@ jobs:
           oc_server: ${{ secrets.oc_server || env.DEFAULT_OC_SERVER }}
           commands: |
             # Remove PVCs from OpenShift when PR closed
-            echo "${{ inputs.remove_pvc }}" | while IFS= read -r pvc; do
-                oc delete pvc ${pvc//,/} || echo "Not found: ${pvc//,/}"
+            for pvc in $(echo "${{ inputs.remove_pvc }}" | tr ',' ' '); do
+              oc delete pvc "$pvc" || echo "Not found: $pvc"
             done
