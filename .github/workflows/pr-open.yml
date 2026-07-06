@@ -160,18 +160,6 @@ jobs:
             # Fail if any resources with the cleanup label still exist
             oc get cm -l "app=${{ github.event.repository.name }}-${{ github.event.number }}" -o name | grep . && exit 1 || true
 
-  csr-generator: # testing, will be deleted
-    name: Certificate Generation
-    permissions:
-      contents: read
-    uses: ./.github/workflows/csr-generator.yml
-    secrets:
-      oc_namespace: ${{ secrets.oc_namespace }}
-      oc_token: ${{ secrets.oc_token }}
-    with:
-      domain: example.gov.bc.ca
-      oc_server: ${{ vars.oc_server }}
-
   # ==========================================================================
   # WARNING: This job acts as the required merge gate for this workflow.
   # If you add a new job to this workflow, you MUST add its ID to the 'needs'
@@ -179,7 +167,7 @@ jobs:
   # ==========================================================================
   results:
     name: Results
-    needs: [builds, csr-generator, deploys, label-verify, schema-spy, validate]
+    needs: [builds, deploys, label-verify, schema-spy, validate]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 1
