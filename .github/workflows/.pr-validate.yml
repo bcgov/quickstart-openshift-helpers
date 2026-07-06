@@ -26,6 +26,9 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-24.04
     steps:
+      - name: Deprecation Warning
+        run: echo "::warning title=Deprecated Workflow::This workflow (.pr-validate.yml) is deprecated and will be removed. Please migrate to uses: bcgov/actions/.github/workflows/.pr-validate.yml@v1"
+
       # Conventional commits
       - name: Conventional Commits
         uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1

@@ -54,6 +54,9 @@ jobs:
           - 5432:5432
     timeout-minutes: 10
     steps:
+      - name: Deprecation Warning
+        run: echo "::warning title=Deprecated Workflow::This workflow (.schema-spy.yml) is deprecated and will be removed. Please migrate to uses: bcgov/actions/.github/workflows/.schema-spy.yml@v1"
+
       - uses: actions/checkout@v7
 
       - name: Flyway

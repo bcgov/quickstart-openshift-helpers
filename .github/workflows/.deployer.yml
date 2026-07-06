@@ -90,6 +90,9 @@ jobs:
       tag: ${{ steps.vars.outputs.tag }}
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
+      - name: Deprecation Warning
+        run: echo "::warning title=Deprecated Workflow::This workflow (.deployer.yml) is deprecated and will be removed. Please migrate to uses: bcgov/actions/.github/workflows/.deployer.yml@v1"
+
       ### Triggers, tag and release
 
       # Variables

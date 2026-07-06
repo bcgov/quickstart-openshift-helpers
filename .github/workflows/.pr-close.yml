@@ -74,6 +74,9 @@ jobs:
     outputs:
       packages: ${{ steps.packages.outputs.packages }}
     steps:
+      - name: Deprecation Warning
+        run: echo "::warning title=Deprecated Workflow::This workflow (.pr-close.yml) is deprecated and will be removed. Please migrate to uses: bcgov/actions/.github/workflows/.pr-close.yml@v1"
+
       - id: packages
         run: |
           # Convert packages to JSON array for job matrix
@@ -113,6 +116,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
+      - name: Deprecation Warning
+        run: echo "::warning title=Deprecated Workflow::This workflow (.pr-close.yml) is deprecated and will be removed. Please migrate to uses: bcgov/actions/.github/workflows/.pr-close.yml@v1"
+
       - name: Helm Cleanup
         env:
           release: ${{ inputs.repository }}-${{ inputs.target }}
