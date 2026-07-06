@@ -91,7 +91,7 @@ jobs:
       triggered: ${{ steps.deploy.outputs.triggered }}
     steps:
       - name: Deprecation Warning
-        run: echo "::warning title=Deprecated Workflow::This workflow (.deployer.yml) is deprecated and will be removed. Please migrate to uses: bcgov/actions-openshift/.github/workflows/.deployer.yml@v1"
+        run: echo "::warning title=Deprecated Workflow::This workflow (.deployer.yml) has moved to the bcgov/actions-openshift monorepo. Please visit https://github.com/bcgov/actions-openshift to find the latest version."
 
       ### Triggers, tag and release
 

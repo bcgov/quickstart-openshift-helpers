@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Deprecation Warning
-        run: echo "::warning title=Deprecated Workflow::This workflow (.pr-validate.yml) is deprecated and will be removed. Please migrate to uses: bcgov/actions/.github/workflows/.pr-validate.yml@v1"
+        run: echo "::warning title=Deprecated Workflow::This workflow (.pr-validate.yml) has moved to the bcgov/actions monorepo. Please visit https://github.com/bcgov/actions for the latest version."
 
       # Conventional commits
       - name: Conventional Commits
