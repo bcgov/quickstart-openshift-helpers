@@ -79,13 +79,13 @@ curl -fsSL https://raw.githubusercontent.com/bcgov/quickstart-openshift-helpers/
 To redirect output to a report file:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/bcgov/quickstart-openshift-helpers/main/openshift-reporter/reporter.sh | bash > ~/Downloads/report.txt 2>&1
+curl -fsSL https://raw.githubusercontent.com/bcgov/quickstart-openshift-helpers/main/openshift-reporter/reporter.sh | bash > report.txt 2>&1
 ```
 
 ### Local Execution
 
 ```bash
-./openshift-reporter/reporter.sh "admin edit view" > ~/Downloads/report.txt 2>&1
+./openshift-reporter/reporter.sh "admin edit view" > report.txt 2>&1
 ```
 
 ### Prerequisites
