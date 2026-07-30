@@ -63,3 +63,39 @@ oc process -f openshift.deploy.yml -p ZONE=test -p TAG=test \
 # 6. Scale up stack or recreate deployments
 # Use web console, GitHub Actions workflow or cli
 ```
+
+# ./openshift-reporter
+
+`reporter.sh` - report on OpenShift user rights across accessible projects.
+
+## Usage
+
+### Direct Execution via curl
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/bcgov/quickstart-openshift-helpers/main/openshift-reporter/reporter.sh | bash
+```
+
+To pass arguments (e.g. custom roles):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/bcgov/quickstart-openshift-helpers/main/openshift-reporter/reporter.sh | bash -s -- "admin edit"
+```
+
+To redirect output to a report file:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/bcgov/quickstart-openshift-helpers/main/openshift-reporter/reporter.sh | bash -s -- "admin edit view" > report.txt 2>&1
+```
+
+### Local Execution
+
+```bash
+./openshift-reporter/reporter.sh "admin edit view" > report.txt 2>&1
+```
+
+### Prerequisites
+
+- Active `oc` session (`oc whoami`)
+- `jq` CLI installed locally
+
