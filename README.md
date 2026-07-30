@@ -76,10 +76,16 @@ oc process -f openshift.deploy.yml -p ZONE=test -p TAG=test \
 curl -fsSL https://raw.githubusercontent.com/bcgov/quickstart-openshift-helpers/main/openshift-reporter/reporter.sh | bash
 ```
 
+To pass arguments (e.g. custom roles):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/bcgov/quickstart-openshift-helpers/main/openshift-reporter/reporter.sh | bash -s -- "admin edit"
+```
+
 To redirect output to a report file:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/bcgov/quickstart-openshift-helpers/main/openshift-reporter/reporter.sh | bash > report.txt 2>&1
+curl -fsSL https://raw.githubusercontent.com/bcgov/quickstart-openshift-helpers/main/openshift-reporter/reporter.sh | bash -s -- "admin edit view" > report.txt 2>&1
 ```
 
 ### Local Execution
