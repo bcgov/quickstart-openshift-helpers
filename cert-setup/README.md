@@ -46,10 +46,25 @@ After receiving certificates from your administrators (via JIRA response), you n
 
 ### Installation Steps
 
+You can install or update the certificate using either the CLI script or the OpenShift Web Console.
+
+**Method 1: Using the CLI Script (Recommended)**
 1. Ensure all required files are prepared with correct naming (see above)
 2. Login to [OpenShift](https://console.apps.silver.devops.gov.bc.ca/k8s/cluster/projects)
 3. Switch to the appropriate namespace: `oc project <namespace>`
 4. Install the certificate using `./install_cert.sh`
+
+**Method 2: Updating via OpenShift Web Console (GUI)**
+1. Login to the OpenShift Web Console, switch to your namespace, and go to **Networking -> Routes**.
+2. Find your route and select **Edit Route**.
+3. **Certificate Box:** Paste the contents of your `<DOMAIN>.pem` file.
+4. **Private Key Box:** You **MUST** manually paste the contents of your `<DOMAIN>.key` file. Do not leave this field untouched when updating an existing route. The GUI intentionally masks the key for security and will submit an empty string if you do not re-paste it, causing a silent validation failure (`no key specified`).
+5. **CA Certificate Box:** Paste the contents of your intermediate CA (`<DOMAIN>.ca-cert`).
+6. Click **Save**.
+
+**Important Troubleshooting Checks:**
+* **Verify Admission:** Scroll to the bottom of the Route page and check the **Conditions** section. If `Admitted` is `False`, the router rejected your configuration (usually due to a broken CA chain or a missing private key).
+* **Multiple Routes Warning:** If you have multiple routes sharing the exact same hostname (e.g., a `/admin` route and a public `/` route), HAProxy binds one certificate per hostname. You **must** perform this exact update on **all** routes sharing that hostname. If even one route is left holding the old certificate, the live site may continue serving the expired certificate globally.
 
 ## Reinstall and Renewals
 
