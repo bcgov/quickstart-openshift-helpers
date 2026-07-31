@@ -64,6 +64,7 @@ You can install or update the certificate using either the CLI script or the Ope
 
 **Important Troubleshooting Checks:**
 * **Verify Admission:** Scroll to the bottom of the Route page and check the **Conditions** section. If `Admitted` is `False`, the router rejected your configuration (usually due to a broken CA chain or a missing private key).
+* **Incomplete Trust Chain (Unknown Authority):** If your route is rejected with an `unknown authority` error despite pasting the correct CA file, your OpenShift cluster OS may not natively trust the cross-signed intermediate root. You can force the trust chain by bundling the complete CA chain. In a text editor, paste the contents of your immediate CA (e.g., `Entrust OV TLS Issuing RSA CA 2.pem`), hit enter, and paste the cross-signing CA (e.g., `Sectigo Public Server...`) directly below it. Paste this entire multi-certificate bundle into the **CA Certificate Box**.
 * **Multiple Routes Warning:** If you have multiple routes sharing the exact same hostname (e.g., a `/admin` route and a public `/` route), HAProxy binds one certificate per hostname. You **must** perform this exact update on **all** routes sharing that hostname. If even one route is left holding the old certificate, the live site may continue serving the expired certificate globally.
 
 ## Reinstall and Renewals
