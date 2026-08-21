@@ -70,18 +70,39 @@ fi
 
 # Stream binary dump directly from old deployment to new deployment, filter TOC, and restore
 echo -e "\nDatabase transfer from '${SOURCE_DEPLOYMENT}' to '${TARGET_DEPLOYMENT}' beginning."
-oc exec -i deployment/"${SOURCE_DEPLOYMENT}" -- bash -c "pg_dump -U \${POSTGRES_USER} -d \${POSTGRES_DB} -Fc ${DUMP_PARAMETERS}" \
-  | oc exec -i deployment/"${TARGET_DEPLOYMENT}" -- bash -c "
-    set -euo pipefail
-    trap 'rm -f /tmp/transfer.dump /tmp/transfer.list' EXIT
-    cat > /tmp/transfer.dump
-    if [[ -n \"${RESTORE_TOC_EXCLUDE}\" ]]; then
-      pg_restore -l /tmp/transfer.dump | grep -v -iE \"${RESTORE_TOC_EXCLUDE}\" > /tmp/transfer.list || true
-      pg_restore -U \${POSTGRES_USER} -d \${POSTGRES_DB} --no-owner --no-privileges -L /tmp/transfer.list /tmp/transfer.dump
-    else
-      pg_restore -U \${POSTGRES_USER} -d \${POSTGRES_DB} --no-owner --no-privileges /tmp/transfer.dump
+oc exec -i deployment/"${SOURCE_DEPLOYMENT}" -- env DUMP_PARAMETERS="${DUMP_PARAMETERS}" bash -c '
+  set -euo pipefail
+  pg_dump -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -Fc ${DUMP_PARAMETERS}
+' | oc exec -i deployment/"${TARGET_DEPLOYMENT}" -- env RESTORE_TOC_EXCLUDE="${RESTORE_TOC_EXCLUDE}" bash -c '
+  set -euo pipefail
+  trap "rm -f /tmp/transfer.dump /tmp/transfer.list" EXIT
+  cat > /tmp/transfer.dump
+  if [[ -n "${RESTORE_TOC_EXCLUDE:-}" ]]; then
+    set +e
+    pg_restore -l /tmp/transfer.dump | grep -v -iE "${RESTORE_TOC_EXCLUDE}" > /tmp/transfer.list
+    pipe_status=("${PIPESTATUS[@]}")
+    set -e
+
+    if [[ ${pipe_status[0]} -ne 0 ]]; then
+      echo "Error: pg_restore failed to read TOC from dump file." >&2
+      exit "${pipe_status[0]}"
     fi
-  "
+
+    if [[ ${pipe_status[1]} -ge 2 ]]; then
+      echo "Error: grep failed with exit code ${pipe_status[1]} while filtering TOC." >&2
+      exit "${pipe_status[1]}"
+    fi
+
+    if [[ ! -s /tmp/transfer.list ]]; then
+      echo "Error: TOC list is empty after filtering with pattern \"${RESTORE_TOC_EXCLUDE}\"." >&2
+      exit 1
+    fi
+
+    pg_restore -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" --no-owner --no-privileges -L /tmp/transfer.list /tmp/transfer.dump
+  else
+    pg_restore -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" --no-owner --no-privileges /tmp/transfer.dump
+  fi
+'
 
 # Results
 echo -e "\nDatabase transfer from '${SOURCE_DEPLOYMENT}' to '${TARGET_DEPLOYMENT}' complete."
