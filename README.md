@@ -7,15 +7,10 @@
 >
 > This repository will stay available until that transition is finished. Prefer the new paths below; pin a release tag, not `@main`.
 >
-> Reusable workflows:
-> ```yaml
-> jobs:
->   deploy:
->     uses: bcgov/actions-openshift/.github/workflows/.deployer.yml@vX.Y.Z
->   document-db:
->     uses: bcgov/actions-openshift/.github/workflows/.schema-spy.yml@vX.Y.Z
->   cleanup:
->     uses: bcgov/actions-openshift/.github/workflows/.pr-close.yml@vX.Y.Z
-> ```
+> Composite actions: [`cleanup-pr`](https://github.com/bcgov/actions-openshift/tree/main/cleanup-pr), [`crunchy`](https://github.com/bcgov/actions-openshift/tree/main/crunchy), [`deployer`](https://github.com/bcgov/actions-openshift/tree/main/deployer), [`oc-runner`](https://github.com/bcgov/actions-openshift/tree/main/oc-runner), [`route-tls`](https://github.com/bcgov/actions-openshift/tree/main/route-tls).
 >
-> Composite actions live in the same destination (`cleanup-pr`, `crunchy`, `deployer`, `oc-runner`, `route-tls`). Scripts live under [`scripts/oc/`](https://github.com/bcgov/actions-openshift/tree/main/scripts/oc) and [`scripts/cert/`](https://github.com/bcgov/actions-openshift/tree/main/scripts/cert).
+> Scripts: [`scripts/oc/`](https://github.com/bcgov/actions-openshift/tree/main/scripts/oc) (including the Postgres migration walkthrough) and [`scripts/cert/`](https://github.com/bcgov/actions-openshift/tree/main/scripts/cert).
+>
+> SchemaSpy remains a reusable workflow: `bcgov/actions-openshift/.github/workflows/.schema-spy.yml@vX.Y.Z`. PR title validation lives in [`bcgov/actions/pr-validate`](https://github.com/bcgov/actions/tree/main/pr-validate).
+>
+> Helpers `.deployer.yml` is not moving. Existing pins on helper tags keep working; new work uses the [`deployer`](https://github.com/bcgov/actions-openshift/tree/main/deployer) action.
