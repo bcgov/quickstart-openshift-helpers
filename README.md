@@ -1,108 +1,21 @@
-[![Merge](https://github.com/bcgov/quickstart-openshift-helpers/actions/workflows/merge.yml/badge.svg)](https://github.com/bcgov/quickstart-openshift-helpers/actions/workflows/merge.yml)
+# QuickStart OpenShift Helpers (Moving)
 
-# QuickStart OpenShift - Helpers
-Workflows and any other common code used by bcgov/quickstart-openshift (template).
-
-# Breaking Changes
-
-`oc_server` has been moved to a secret.  It is an optional field, only affecting some users.
-
-Example using shared workflow .pr-close.yml:
-```
-jobs:
-  cleanup:
-    name: Cleanup and Image Promotion
-    uses: bcgov/quickstart-openshift-helpers/.github/workflows/.pr-close.yml@vX.Y.Z
-    permissions:
-      packages: write
-    secrets:
-      oc_namespace: ${{ secrets.OC_NAMESPACE }}
-      oc_server: ${{ secrets.OC_SERVER }}   # ADDED - OPTIONAL!
-      oc_token: ${{ secrets.OC_TOKEN }}
-    with:
-      cleanup: helm
-      packages: backend client migrations
-      oc_server: ${{ secrets.OC_SERVER }}   # REMOVED - OPTIONAL!
-```
-
-# ./oc_scripts
-
-`rename_deployment.sh` - rename a deployment (metadata, labels)
-
-`db_transfer.sh` - stream binary pg_dump from one container to pg_restore in another, with TOC filtering and `--no-owner --no-privileges`
-
-`db_compare.sh` - compare PostgreSQL table row counts between two deployments
-
-## Example: Postgres Database Migration
-
-These scripts can be used to migrate a postgres or postgis database.
-
-Note: Make sure your template deploys the correct db version. PR-based pipelines, which we strongly recommend, often require a merge before custom images are re-labeled.
-
-```bash
-# 1. Scale down or delete stack (non-db only)
-# Use web console or cli
-
-# 2. Rename the old db (`-prev` auto-appended)
-./rename_deployment.sh your-db
-
-# 3. Make sure old and new PVC names are different
-# E.g. Append DB_VERSION in OpenShift template:
-#  - kind: PersistentVolumeClaim
-#    apiVersion: v1
-#    metadata:
-#      name: ${NAME}-${ZONE}-${COMPONENT}-${DB_VERSION}
-
-# 4. Deploy the new db
-oc process -f openshift.deploy.yml -p ZONE=test -p TAG=test \
-  | oc apply -f -
-
-# 5. Stream dump from old to new db (filters conflicting PostGIS extension objects and restores with --no-owner --no-privileges)
-./db_transfer.sh your-db-prev your-db
-
-# 6. Collation Refresh (PostgreSQL Major Upgrade / glibc update)
-# When upgrading PostgreSQL major versions, clear the collation version warning:
-# oc exec -it deployment/your-db -- psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c "ALTER DATABASE ${POSTGRES_DB} REFRESH COLLATION VERSION;"
-
-# 7. Compare row counts between source and target databases
-./db_compare.sh your-db-prev your-db
-
-# 8. Scale up stack or recreate deployments
-# Use web console, GitHub Actions workflow or cli
-```
-
-# ./openshift-reporter
-
-`reporter.sh` - report on OpenShift user rights across accessible projects.
-
-## Usage
-
-### Direct Execution via curl
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/bcgov/quickstart-openshift-helpers/main/openshift-reporter/reporter.sh | bash
-```
-
-To pass arguments (e.g. custom roles):
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/bcgov/quickstart-openshift-helpers/main/openshift-reporter/reporter.sh | bash -s -- "admin edit"
-```
-
-To redirect output to a report file:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/bcgov/quickstart-openshift-helpers/main/openshift-reporter/reporter.sh | bash -s -- "admin edit view" > report.txt 2>&1
-```
-
-### Local Execution
-
-```bash
-./openshift-reporter/reporter.sh "admin edit view" > report.txt 2>&1
-```
-
-### Prerequisites
-
-- Active `oc` session (`oc whoami`)
-- `jq` CLI installed locally
-
+> [!IMPORTANT]
+> **This repository is being moved!**
+>
+> Development and maintenance of these reusable workflows and scripts are being consolidated in [bcgov/actions-openshift](https://github.com/bcgov/actions-openshift).
+>
+> This repository will stay available until that transition is finished. Prefer the new paths below; pin a release tag, not `@main`.
+>
+> Reusable workflows:
+> ```yaml
+> jobs:
+>   deploy:
+>     uses: bcgov/actions-openshift/.github/workflows/.deployer.yml@vX.Y.Z
+>   document-db:
+>     uses: bcgov/actions-openshift/.github/workflows/.schema-spy.yml@vX.Y.Z
+>   cleanup:
+>     uses: bcgov/actions-openshift/.github/workflows/.pr-close.yml@vX.Y.Z
+> ```
+>
+> Composite actions live in the same destination (`cleanup-pr`, `crunchy`, `deployer`, `oc-runner`, `route-tls`). Scripts live under [`scripts/oc/`](https://github.com/bcgov/actions-openshift/tree/main/scripts/oc) and [`scripts/cert/`](https://github.com/bcgov/actions-openshift/tree/main/scripts/cert).
