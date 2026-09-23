@@ -35,7 +35,7 @@ jobs:
     name: Fake Builds (retags)
     permissions:
       packages: write
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       matrix:
         package: [backend, frontend, migrations]
@@ -63,7 +63,7 @@ jobs:
     environment: ${{ inputs.environment }}
     permissions:
       contents: read
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       tag: ${{ inputs.tag || steps.pr.outputs.pr }}
       triggered: ${{ steps.deploy.outputs.triggered }}
@@ -109,7 +109,7 @@ jobs:
     name: Label Cleanup (setup)
     permissions:
       contents: read
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
       - name: Create labeled ConfigMap
@@ -147,7 +147,7 @@ jobs:
     needs: [label-cleanup]
     permissions:
       contents: read
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
       - name: Verify labeled resources are gone
@@ -169,7 +169,7 @@ jobs:
     name: Results
     needs: [builds, deploys, label-verify, schema-spy, validate]
     if: always()
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 1
     steps:
       - name: Log Job Results Context

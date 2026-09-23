@@ -84,7 +84,7 @@ jobs:
   deploy:
     name: Helm
     environment: ${{ inputs.environment }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       packages: ${{ steps.vars.outputs.packages }}
       tag: ${{ steps.vars.outputs.tag }}
@@ -147,7 +147,7 @@ jobs:
     needs: [deploy]
     permissions:
       packages: write
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       matrix:
         package: ${{ fromJson(needs.deploy.outputs.packages) }}
