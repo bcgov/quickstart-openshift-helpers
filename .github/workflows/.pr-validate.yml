@@ -41,7 +41,7 @@ jobs:
       # Add PR Description, doesn't work with forks
       - name: PR Description
         if: inputs.reject_forks != 'true' && inputs.markdown_links != ''
-        uses: bcgov/action-pr-description-add@9bf88aec33edb7c00ed72f9305aa1721d0cdab9f # v2.0.3
+        uses: bcgov/action-pr-description-add@2f22183cf5a305aa3d0142f88185f7330c105794 # v2.1.0
         env:
           DOMAIN: apps.silver.devops.gov.bc.ca
           PREFIX: ${{ github.event.repository.name }}
